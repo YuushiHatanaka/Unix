@@ -7,6 +7,8 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include <stdio.h>
+#include <stdint.h>
 #include <bits/types.h>
 #include <unistd.h>
 #include <time.h>
@@ -31,8 +33,8 @@ protected:
     pthread_t m_id;                         // ID
     pthread_attr_t m_attr;                  // 属性
     int m_errno;                            // エラー番号
-    sem_t m_suspend;                        // 中断用セマフォ
-    sem_t m_resume;                         // 再開用セマフォ
+    sigset_t m_sigmask;                     // SIGNALマスク
+    bool m_isSuspend;                       // 中断状態
 
 private:
     //--------------------------------------------------------------------------
@@ -63,11 +65,40 @@ private:
     }
 
     //--------------------------------------------------------------------------
-    // シグナルハンドラ
+    // シグナルハンドラ(Suspend)
     //--------------------------------------------------------------------------
-    static void SuspendSignalHandler(int sig, siginfo_t* info, void* args)
+    static void SuspendSignalHandler(int signum)
     {
-        std::cout << "SuspendSignalHandler" << args << "\n";
+        sigset_t signal_set;
+        int no = 0;
+
+        // 全シグナルを除外するためのシグナル・マスクの初期化
+        if(sigemptyset(&signal_set) != 0)
+        {
+            // エラー表示
+            perror("sigemptyset");
+        }
+
+        // シグナル・マスクへのシグナルの追加
+        if(sigaddset(&signal_set, SIGUSR2) != 0)
+        {
+            // エラー表示
+            perror("sigaddset");
+        }
+
+        // 非同期シグナルの待機
+        if(sigwait(&signal_set, &no) != 0)
+        {
+            // エラー表示
+            perror("sigwait");
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // シグナルハンドラ(Resume)
+    //--------------------------------------------------------------------------
+    static void ResumeSignalHandler(int signum)
+    {
     }
 
     //--------------------------------------------------------------------------
@@ -101,19 +132,26 @@ private:
     }
 
     //--------------------------------------------------------------------------
-    // シグナルハンドラ設定
+    // シグナルハンドラ初期化
     //--------------------------------------------------------------------------
     void InitSignalHandler()
     {
-        struct sigaction _sigaction;        // シグナル受信時動作決定構造体
+        struct sigaction suspendAction;     // SuspendシグナルAction
+        struct sigaction resumeAction;      // ResumeシグナルAction
 
-        // 動作設定
-        memset(&_sigaction, 0x00, sizeof(_sigaction));
-        _sigaction.sa_flags = SA_SIGINFO;
-        sigemptyset(&_sigaction.sa_mask);
-        _sigaction.sa_sigaction  = Thread::SuspendSignalHandler;
+        // SuspendシグナルAction設定
+        suspendAction.sa_flags = 0;
+        suspendAction.sa_handler = Thread::SuspendSignalHandler;
+        sigemptyset( &suspendAction.sa_mask );
 
-        sigaction(SIGUSR1, &_sigaction, NULL);
+        // ResumeシグナルAction設定
+        resumeAction.sa_flags = 0;
+        resumeAction.sa_handler = Thread::ResumeSignalHandler;
+        sigemptyset( &resumeAction.sa_mask );
+
+        // シグナルAction登録
+        sigaction(SIGUSR1, &suspendAction, 0 );
+        sigaction(SIGUSR2, &resumeAction, 0 );
     }
 
 public:
@@ -127,8 +165,7 @@ public:
         this->m_id = 0;
         pthread_attr_init(&(this->m_attr));
         this->m_errno = 0;
-
-        // シグナルハンドラ設定
+        this->m_isSuspend = false;
         this->InitSignalHandler();
     }
 
@@ -142,8 +179,21 @@ public:
         this->m_id = 0;
         pthread_attr_init(&(this->m_attr));
         this->m_errno = 0;
+        this->m_isSuspend = false;
+        this->InitSignalHandler();
+    }
 
-        // シグナルハンドラ設定
+    //--------------------------------------------------------------------------
+    // コンストラクタ
+    //--------------------------------------------------------------------------
+    Thread(std::string name, pthread_attr_t attr)
+    {
+        // 初期設定
+        this->m_name = name;
+        this->m_id = 0;
+        this->m_attr = attr;
+        this->m_errno = 0;
+        this->m_isSuspend = false;
         this->InitSignalHandler();
     }
 
@@ -157,6 +207,8 @@ public:
         this->m_id = thread.m_id;
         this->m_attr = thread.m_attr;
         this->m_errno = thread.m_errno;
+        this->m_isSuspend = thread.m_isSuspend;
+        this->InitSignalHandler();
     }
 
     //--------------------------------------------------------------------------
@@ -215,8 +267,15 @@ public:
     //--------------------------------------------------------------------------
     bool Suspend()
     {
-        // シグナル送信
-        if(pthread_kill(this->m_id, SIGUSR1) != 0)
+        // 中断状態を判定
+        if(this->m_isSuspend)
+        {
+            // 中断中なので何もしない
+            return true;
+        }
+
+        // シグナル送信(Suspend)
+        if(pthread_kill(this->m_id,SIGUSR1) != 0)
         {
             // エラー番号設定
             this->m_errno = errno;
@@ -225,49 +284,8 @@ public:
             return false;
         }
 
-        // 中断待ち
-        if(sem_wait(&(this->m_suspend)) != 0)
-        {
-            // エラー番号設定
-            this->m_errno = errno;
-
-            // 異常終了
-            return false;
-        }
-
-        // 正常終了
-        return true;
-    }
-
-    //--------------------------------------------------------------------------
-    // 中断
-    //--------------------------------------------------------------------------
-    bool Suspend(uint64_t timeOut)
-    {
-        struct timespec timeInfo;           // 時間情報
-
-        // シグナル送信
-        if(pthread_kill(this->m_id, SIGUSR1) != 0)
-        {
-            // エラー番号設定
-            this->m_errno = errno;
-
-            // 異常終了
-            return false;
-        }
-
-        // タイムアウト値取得
-        this->GetTimeOut(timeOut, timeInfo);
-
-        // 中断待ち
-        if(sem_timedwait(&(this->m_suspend), &timeInfo) != 0)
-        {
-            // エラー番号設定
-            this->m_errno = errno;
-
-            // 異常終了
-            return false;
-        }
+        // 中断中に設定
+        this->m_isSuspend = true;
 
         // 正常終了
         return true;
@@ -278,6 +296,26 @@ public:
     //--------------------------------------------------------------------------
     bool Resume()
     {
+        // 中断状態を判定
+        if(!this->m_isSuspend)
+        {
+            // 中断中ではないので何もしない
+            return true;
+        }
+
+        // シグナル送信(Resume)
+        if(pthread_kill(this->m_id,SIGUSR2) != 0)
+        {
+            // エラー番号設定
+            this->m_errno = errno;
+
+            // 異常終了
+            return false;
+        }
+
+        // 中断解除に設定
+        this->m_isSuspend = false;
+
         // 正常終了
         return true;
     }

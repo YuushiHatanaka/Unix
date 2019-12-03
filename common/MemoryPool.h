@@ -7,19 +7,19 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include "Exception.h"
 #include "Mutex.h"
 
-#include <string>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+#include <errno.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <map>
 #include <vector>
-#include <bits/types.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
+#include <list>
+#include <map>
 
 //==============================================================================
 // 定数定義
@@ -61,28 +61,21 @@ typedef struct _PoolMemoryInfo
 //------------------------------------------------------------------------------
 // MemoryPool例外クラス
 //------------------------------------------------------------------------------
-class MemoryPoolException
+class MemoryPoolException : public Exception
 {
-public:
-    std::string Msg;                        // メッセージ
-
 public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPoolException(std::string msg)
+    MemoryPoolException(std::string msg) : Exception(msg)
     {
-        // メッセージ設定
-        this->Msg = msg;
     };
 
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPoolException(int no)
+    MemoryPoolException(int no): Exception(no)
     {
-        // メッセージ設定
-        this->Msg = strerror(no);
     };
 };
 
@@ -94,6 +87,7 @@ class MemoryPool
 private:
     Mutex m_mutex;                          // 排他制御クラス
     uint64_t m_currentSize;                 // 補足メモリサイズ
+    std::list<MemoryPoolId> m_idlist;       // IDリストテーブル
                                             // ブロック最大サイズ
     std::map<MemoryPoolId,uint64_t> m_capacity;
                                             // 使用中テーブル
@@ -103,21 +97,33 @@ private:
     int m_errno;                            // エラー番号
 
     //--------------------------------------------------------------------------
+    // IDリスト初期化
+    //--------------------------------------------------------------------------
+    void InitializationIdList()
+    {
+        // IDリスト初期化
+        this->m_idlist.push_back(MemoryPoolId_32);
+        this->m_idlist.push_back(MemoryPoolId_64);
+        this->m_idlist.push_back(MemoryPoolId_128);
+        this->m_idlist.push_back(MemoryPoolId_256);
+        this->m_idlist.push_back(MemoryPoolId_512);
+        this->m_idlist.push_back(MemoryPoolId_1024);
+        this->m_idlist.push_back(MemoryPoolId_2048);
+        this->m_idlist.push_back(MemoryPoolId_4096);
+    }
+
+    //--------------------------------------------------------------------------
     // 初期化
     //--------------------------------------------------------------------------
     void Initialization()
     {
+        // IDリスト初期化
+        this->InitializationIdList();
+
         // 初期化
-        for(MemoryPoolId id: { MemoryPoolId_32,
-                               MemoryPoolId_64,
-                               MemoryPoolId_128,
-                               MemoryPoolId_256,
-                               MemoryPoolId_512,
-                               MemoryPoolId_1024,
-                               MemoryPoolId_2048,
-                               MemoryPoolId_4096 } )
+        for(std::list<MemoryPoolId>::const_iterator _itr = this->m_idlist.begin(); _itr != this->m_idlist.end(); ++_itr)
         {
-            this->Initialization(id, 0);
+            this->Initialization(*_itr, 0);
         }
 
         // 可変長利用域登録
@@ -130,17 +136,13 @@ private:
     //--------------------------------------------------------------------------
     void Initialization(uint64_t capacity)
     {
+        // IDリスト初期化
+        this->InitializationIdList();
+
         // ブロックID毎に初期化
-        for(MemoryPoolId id: { MemoryPoolId_32,
-                                MemoryPoolId_64,
-                                MemoryPoolId_128,
-                                MemoryPoolId_256,
-                                MemoryPoolId_512,
-                                MemoryPoolId_1024,
-                                MemoryPoolId_2048,
-                                MemoryPoolId_4096 } )
+        for(std::list<MemoryPoolId>::const_iterator _itr = this->m_idlist.begin(); _itr != this->m_idlist.end(); ++_itr)
         {
-            this->Initialization(id, capacity);
+            this->Initialization(*_itr, capacity);
         }
 
         // 可変長利用域登録
@@ -173,19 +175,11 @@ private:
     void Destroy()
     {
         // 全てを破棄
-        for(MemoryPoolId id: { MemoryPoolId_32,
-                                MemoryPoolId_64,
-                                MemoryPoolId_128,
-                                MemoryPoolId_256,
-                                MemoryPoolId_512,
-                                MemoryPoolId_1024,
-                                MemoryPoolId_2048,
-                                MemoryPoolId_4096,
-                                MemoryPoolId_Variable } )
+        for(std::list<MemoryPoolId>::const_iterator _itr = this->m_idlist.begin(); _itr != this->m_idlist.end(); ++_itr)
         {
-            // 破棄
-            this->Destroy(id);
+            this->Destroy(*_itr);
         }
+        this->Destroy(MemoryPoolId_Variable);
 
         // ブロック最大サイズクリア
         this->m_capacity.clear();
@@ -368,6 +362,7 @@ public:
         // コピー
         this->m_currentSize = memoryBlock.m_currentSize;
         this->m_capacity = memoryBlock.m_capacity;
+        this->m_idlist = memoryBlock.m_idlist;
         this->m_usedtable = memoryBlock.m_usedtable;
         this->m_alloctable = memoryBlock.m_alloctable;
         this->m_errno = memoryBlock.m_errno;
@@ -565,7 +560,7 @@ public:
 
         // 検索
         void* _find = NULL;
-        for(std::vector<void*>::const_iterator _itr = _used_block->begin(); _itr != _used_block->end(); ++_itr)
+        for(std::vector<void*>::iterator _itr = _used_block->begin(); _itr != _used_block->end(); ++_itr)
         {
             // 一致判定
             if(_head  == *_itr)
@@ -631,7 +626,7 @@ public:
 
         // 検索
         void* _find = NULL;
-        for(std::vector<void*>::const_iterator _itr = _used_block->begin(); _itr != _used_block->end(); ++_itr)
+        for(std::vector<void*>::iterator _itr = _used_block->begin(); _itr != _used_block->end(); ++_itr)
         {
             // 一致判定
             if(_head  == *_itr)
@@ -726,18 +721,11 @@ public:
         _stream << "　補足メモリサイズ合計     : " << std::setw(12) << this->m_currentSize << " byte\n";
 
         // 文字列化
-        for(MemoryPoolId id: { MemoryPoolId_32,
-                                MemoryPoolId_64,
-                                MemoryPoolId_128,
-                                MemoryPoolId_256,
-                                MemoryPoolId_512,
-                                MemoryPoolId_1024,
-                                MemoryPoolId_2048,
-                                MemoryPoolId_4096,
-                                MemoryPoolId_Variable } )
+        for(std::list<MemoryPoolId>::const_iterator _itr = this->m_idlist.begin(); _itr != this->m_idlist.end(); ++_itr)
         {
-            _stream << this->ToString(id);
+            _stream << this->ToString(*_itr);
         }
+        _stream << this->ToString(MemoryPoolId_Variable);
 
         // 文字列を返却
         return _stream.str();

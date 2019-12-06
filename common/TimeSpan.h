@@ -19,7 +19,7 @@
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
-// TimeSpanException例外クラス
+// TimeSpan例外クラス
 //------------------------------------------------------------------------------
 class TimeSpanException : public Exception
 {
@@ -283,7 +283,7 @@ public:
     //--------------------------------------------------------------------------
     // デストラクタ
     //--------------------------------------------------------------------------
-    ~TimeSpan()
+    virtual ~TimeSpan()
     {
     }
 
@@ -329,16 +329,6 @@ public:
         // 加算
         this->m_days += value;
 
-        // 減算判定
-        if(this->m_days < 0)
-        {
-            // 減算
-            this->AddHours(-1*(value*24));
-
-            // 初期化
-            this->m_days = 0;
-        }
-
         // 自身を返却
         return *this;
     }
@@ -348,26 +338,15 @@ public:
     //--------------------------------------------------------------------------
     TimeSpan& AddHours(int64_t value)
     {
-        // 加算
-        this->m_hours += value;
+        // 加算値計算
+        int64_t _days = value/24;
+        int64_t _hours = value-(_days*24);
 
-        // 加減算判定
-        if(this->m_hours >= 24)
-        {
-            // 減算
-            this->m_hours -= (24*(value%24));
+        // 加算(秒)
+        this->m_hours += _hours;
 
-            // 加算
-            this->AddDays(1*(value%24));
-        }
-        else if(this->m_hours < 0)
-        {
-            // 減算
-            this->AddDays(-1*(value%24));
-
-            // 加算
-            this->m_hours += (24*(value%24));
-        }
+        // 加算(分)
+        this->AddDays(_days);
 
         // 自身を返却
         return *this;
@@ -378,26 +357,15 @@ public:
     //--------------------------------------------------------------------------
     TimeSpan& AddMinutes(int64_t value)
     {
-        // 加算
-        this->m_minutes += value;
+        // 加算値計算
+        int64_t _hours = value/60;
+        int64_t _minutes = value-(_hours*60);
 
-        // 加減算判定
-        if(this->m_minutes >= 60)
-        {
-            // 減算
-            this->m_minutes -= (60*(value%60));
+        // 加算(秒)
+        this->m_minutes += _minutes;
 
-            // 加算
-            this->AddHours(1*(value%60));
-        }
-        else if(this->m_minutes < 0)
-        {
-            // 減算
-            this->AddHours(-1*(value%60));
-
-            // 加算
-            this->m_minutes += (60*(value%60));
-        }
+        // 加算(分)
+        this->AddHours(_hours);
 
         // 自身を返却
         return *this;
@@ -408,26 +376,15 @@ public:
     //--------------------------------------------------------------------------
     TimeSpan& AddSeconds(int64_t value)
     {
-        // 加算
-        this->m_seconds += value;
+        // 加算値計算
+        int64_t _minutes = value/60;
+        int64_t _seconds = value-(_minutes*60);
 
-        // 加減算判定
-        if(this->m_seconds >= 60)
-        {
-            // 減算
-            this->m_seconds -= (60*(value%60));
+        // 加算(秒)
+        this->m_seconds += _seconds;
 
-            // 加算
-            this->AddMinutes(1*(value%60));
-        }
-        else if(this->m_seconds < 0)
-        {
-            // 減算
-            this->AddMinutes(-1*(value%60));
-
-            // 加算
-            this->m_seconds += (60*(value%60));
-        }
+        // 加算(分)
+        this->AddMinutes(_minutes);
 
         // 自身を返却
         return *this;
@@ -438,26 +395,15 @@ public:
     //--------------------------------------------------------------------------
     TimeSpan& AddMilliseconds(int64_t value)
     {
-        // 加算
-        this->m_milliseconds += value;
+        // 加算値計算
+        int64_t _seconds = value/1000;
+        int64_t _milliseconds = value-(_seconds*1000);
 
-        // 秒加減算判定
-        if(this->m_milliseconds >= 1000)
-        {
-            // 減算
-            this->m_milliseconds -= (1000*(value%1000));
+        // 加算(ミリ秒)
+        this->m_milliseconds += _milliseconds;
 
-            // 加算
-            this->AddSeconds(1*(value%1000));
-        }
-        else if(this->m_milliseconds < 0)
-        {
-            // 減算
-            this->AddSeconds(-1*(value%1000));
-
-            // 加算
-            this->m_milliseconds += (1000*(value%1000));
-        }
+        // 加算(秒)
+        this->AddSeconds(_seconds);
 
         // 自身を返却
         return *this;
@@ -484,21 +430,16 @@ public:
         uint64_t _str_index = 0;
         for(uint64_t _format_index=0; _format_index<format.length(); _format_index++)
         {
-//std::cout <<"フォーマット文字 : " << format[_format_index] << "\n";
-//std::cout <<"　残り文字       : " << format.substr(_format_index) << "\n";
-
             // '%'を検出した場合
             if(_find == false && format[_format_index] == '%')
             {
                 // 一旦出力せずに処理継続
-//std::cout <<"　'%'検出\n";
                 _find = true;
                 continue;
             }
             // '%'を検出している場合
             else if(_find == true && format[_format_index] == '%')
             {
-//std::cout <<"　'%%'検出\n";
                 // 文字一致しているか？
                 if(str[_str_index] != '%')
                 {
@@ -514,7 +455,6 @@ public:
             // '%'を検出していない場合
             else if(_find == false && format[_format_index] != '%')
             {
-//std::cout <<"　'%'未検出\n";
                 // 文字一致しているか？
                 if(format[_format_index] != str[_str_index])
                 {
@@ -532,7 +472,6 @@ public:
             // フォーマット文字列長を取得
             uint64_t _start_index = _format_index;
             uint64_t _format_length = this->tostring_getformatlength(format, _format_index, format[_start_index]);
-//std::cout <<"　=>>>> フォーマット解析：" << format.substr(_start_index, _format_length) << "(" << _format_length << ")\n";
 
             // 数値検索用正規表現決定
             std::string _regular_expression_string;
@@ -581,7 +520,6 @@ public:
 
             // 数値化
             uint64_t _value = atoi(_regular_expression_result[0].c_str());
-//std::cout <<"　=>>>> 取得値:" << _regular_expression_result[0] << "(" << _value << ")" << "\n";
 
             // 文字毎に分岐処理する
             switch(format[_start_index])
@@ -701,10 +639,10 @@ public:
                 _nowstring << this->tostring_right(format, i, format[i], this->m_seconds);
                 break;
             case 'f' : 
-                _nowstring << this->tostring_zero_left(format, i, format[i], this->m_milliseconds);
+                _nowstring << this->tostring_zero_right(format, i, format[i], this->m_milliseconds);
                 break;
             case 'F' : 
-                _nowstring << this->tostring_left(format, i, format[i], this->m_milliseconds);
+                _nowstring << this->tostring_zero_right(format, i, format[i], this->m_milliseconds);
                 break;
             // 上記以外
             default:

@@ -19,7 +19,7 @@
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
-// DateTimeException例外クラス
+// DateTime例外クラス
 //------------------------------------------------------------------------------
 class DateTimeException : public Exception
 {
@@ -41,6 +41,11 @@ private:
     struct timespec m_timespec;             // 値(struct timespec)
     struct tm m_tmval;                      // 値(struct tm)
     time_t m_value;                         // 値(time_t)
+
+public:
+    struct timespec GetTimesec() { return this->m_timespec; }
+    struct tm GetTmval() { return this->m_tmval; }
+    time_t GetValue() { return this->m_value; }
 
 private:
     //--------------------------------------------------------------------------
@@ -239,7 +244,7 @@ public:
     //--------------------------------------------------------------------------
     // デストラクタ
     //--------------------------------------------------------------------------
-    ~DateTime()
+    virtual ~DateTime()
     {
     }
 
@@ -350,79 +355,8 @@ public:
 
         // 結果を返却
         return _result;
-/*
-        struct timespec _calc_result;       // 計算結果(struct timespec)
-        DateTime _result;                   // 計算結果
-
-        // 加算
-        this->Add(this->m_timespec,value.m_timespec,_calc_result);
-        _result = _calc_result;
-
-        // 計算結果を返却
-        return _result;
-*/
-    }
-/*
-    //--------------------------------------------------------------------------
-    // operator +
-    //--------------------------------------------------------------------------
-    const DateTime operator + (const struct timespec& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_timespec;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 計算結果を返却
-        return _result;
     }
 
-    //--------------------------------------------------------------------------
-    // operator +
-    //--------------------------------------------------------------------------
-    const DateTime operator + (const struct tm& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_tmval;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 計算結果を返却
-        return _result;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator +
-    //--------------------------------------------------------------------------
-    const DateTime operator + (const time_t& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_value;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 計算結果を返却
-        return _result;
-    }
-*/
     //--------------------------------------------------------------------------
     // operator -
     //--------------------------------------------------------------------------
@@ -430,263 +364,18 @@ public:
     {
         TimeSpan _result;
 
+        // 自身の値を追加
         _result.AddMilliseconds(this->m_timespec.tv_nsec/1000000);
         _result.AddSeconds(this->m_timespec.tv_sec);
-/*
-        _result.AddMilliseconds((value.m_timespec.tv_nsec/1000000)*-1);
+
+        // value値を減算
+        _result.AddMilliseconds((value.m_timespec.tv_nsec/1000000*-1));
         _result.AddSeconds(value.m_timespec.tv_sec*-1);
-*/
-/*
-        struct timespec _calc_result;       // 計算結果(struct timespec)
-        DateTime _result;                   // 計算結果
-        // 加算
-        this->Sub(this->m_timespec, value.m_timespec, _calc_result);
-std::cout << "operator -\n";
-std::cout << "①:" << this->m_timespec.tv_sec << "\n";
-std::cout << "②:" << this->m_timespec.tv_nsec << "\n";
-std::cout << "③:" << value.m_timespec.tv_sec << "\n";
-std::cout << "④:" << value.m_timespec.tv_nsec << "\n";
-std::cout << "⑤:" << _calc_result.tv_sec << "\n";
-std::cout << "⑥:" << _calc_result.tv_nsec << "\n";
-        _result = _calc_result;
-std::cout << _result.ToString("%Y/%m/%d %H:%M:%S.%L") << "\n";
-*/
-        // 計算結果を返却
-        return _result;
-    }
-/*
-    //--------------------------------------------------------------------------
-    // operator -
-    //--------------------------------------------------------------------------
-    const DateTime operator - (const struct timespec& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_timespec;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
 
         // 計算結果を返却
         return _result;
     }
 
-    //--------------------------------------------------------------------------
-    // operator -
-    //--------------------------------------------------------------------------
-    const DateTime operator - (const struct tm& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_tmval;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
-
-        // 計算結果を返却
-        return _result;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator -
-    //--------------------------------------------------------------------------
-    const DateTime operator - (const time_t& value) const
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_value;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
-
-        // 計算結果を返却
-        return _result;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator +=
-    //--------------------------------------------------------------------------
-    DateTime& operator += (const DateTime& value)
-    {
-        DateTime _result;                   // 計算結果
-
-        // 加算
-        _result = *this + value;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator +=
-    //--------------------------------------------------------------------------
-    DateTime& operator += (const struct timespec& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_timespec;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator +=
-    //--------------------------------------------------------------------------
-    DateTime& operator += (const struct tm& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_tmval;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator +=
-    //--------------------------------------------------------------------------
-    DateTime& operator += (const time_t& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_value;
-        _to = value;
-
-        // 加算
-        _result = _from + _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator -=
-    //--------------------------------------------------------------------------
-    DateTime& operator -= (const DateTime& value)
-    {
-        DateTime _result;                   // 計算結果
-
-        // 減算
-        _result = *this - value;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator -=
-    //--------------------------------------------------------------------------
-    DateTime& operator -= (const struct timespec& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_timespec;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator -=
-    //--------------------------------------------------------------------------
-    DateTime& operator -= (const struct tm& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_tmval;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-
-    //--------------------------------------------------------------------------
-    // operator -=
-    //--------------------------------------------------------------------------
-    DateTime& operator -= (const time_t& value)
-    {
-        DateTime _from;                     // 計算値
-        DateTime _to;                       // 計算値
-        DateTime _result;                   // 計算結果
-
-        // 計算値設定
-        _from = this->m_value;
-        _to = value;
-
-        // 減算
-        _result = _from - _to;
-
-        // 結果をコピー
-        this->Copy(_result);
-
-        // 自身を返却
-        return *this;
-    }
-*/
     //--------------------------------------------------------------------------
     // operator ==
     //--------------------------------------------------------------------------

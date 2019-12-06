@@ -21,7 +21,7 @@
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
-// MsgQueueException例外クラス
+// MsgQueue例外クラス
 //------------------------------------------------------------------------------
 class MsgQueueException : public Exception
 {
@@ -53,11 +53,15 @@ public:
 //------------------------------------------------------------------------------
 class MsgQueue
 {
+private:
     key_t m_key;                            // KEY値
     int m_msqid;                            // System V メッセージキュー識別子
     int m_errno;                            // エラー番号
     ssize_t m_rcvsize;                      // 直近の受信データサイズ
     bool m_destroy;                         // 破棄フラグ
+
+public:
+    int Msqid() { return this->m_msqid; }
 
 public:
     //--------------------------------------------------------------------------
@@ -83,7 +87,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(bool destroy, int msgflg)
+    MsgQueue(int msgflg, bool destroy)
     {
         // 初期化
         this->m_key = IPC_PRIVATE;
@@ -156,7 +160,7 @@ public:
     //--------------------------------------------------------------------------
     // デストラクタ
     //--------------------------------------------------------------------------
-    ~MsgQueue()
+    virtual ~MsgQueue()
     {
         // 破棄
         if(this->m_destroy)
@@ -171,6 +175,9 @@ public:
     //--------------------------------------------------------------------------
     bool Key(std::string pathname, int proj_id)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // キー生成
         this->m_key = ftok(pathname.c_str(), proj_id);
 
@@ -193,6 +200,9 @@ public:
     //--------------------------------------------------------------------------
     bool Get(int msgflg)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージキュー識別子を取得
         this->m_msqid = msgget(this->m_key, msgflg);
 
@@ -215,6 +225,9 @@ public:
     //--------------------------------------------------------------------------
     bool CtrlStat(struct msqid_ds& buf)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージ制御
         int _result = msgctl(this->m_msqid, IPC_STAT, &buf);
 
@@ -237,6 +250,9 @@ public:
     //--------------------------------------------------------------------------
     bool CtrlSet(struct msqid_ds*& buf)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージ制御
         int _result = msgctl(this->m_msqid, IPC_SET, buf);
 
@@ -268,6 +284,9 @@ public:
     //--------------------------------------------------------------------------
     bool CtrlRmid(int msqid)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージ制御
         int _result = msgctl(msqid, IPC_RMID, NULL);
 
@@ -290,6 +309,9 @@ public:
     //--------------------------------------------------------------------------
     bool Send(const void* msgp, size_t msgsz, int msgflg)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージ送信
         int _result = msgsnd(this->m_msqid, msgp, msgsz, msgflg);
 
@@ -312,6 +334,9 @@ public:
     //--------------------------------------------------------------------------
     bool Recv(void*& msgp, size_t msgsz,  long msgtyp, int msgflg, ssize_t& rcvsize)
     {
+        // エラー初期化
+        this->m_errno = 0;
+
         // メッセージ受信
         this->m_rcvsize = msgrcv(this->m_msqid, msgp, msgsz, msgtyp, msgflg);
 
@@ -339,6 +364,16 @@ public:
     {
         struct msqid_ds _msqid_ds;          // msqid_ds データ構造体
         std::stringstream _sstream;         // 文字列化Stream
+
+        // エラーがあった場合はエラー番号を返却
+        if(this->m_errno != 0)
+        {
+            // エラー番号を文字列化
+            _sstream << strerror(this->m_errno);
+
+            // 文字列を返却
+            return _sstream.str();
+        }
 
         // メッセージ制御(IPC_STAT)
         if(!this->CtrlStat(_msqid_ds))

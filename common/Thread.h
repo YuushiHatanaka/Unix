@@ -216,12 +216,15 @@ public:
     //--------------------------------------------------------------------------
     ~Thread()
     {
-        // スレッド動作中なら停止させる
-        if(this->IsActive())
+        // スレッドが終了？
+        if(this->m_id == NULL)
         {
-            // スレッド強制終了
-            this->Stop();
+            // スレッドが終了しているので、何もしない
+            return;
         }
+
+        // スレッド強制終了
+        this->Stop();
     }
 
     //--------------------------------------------------------------------------
@@ -229,6 +232,13 @@ public:
     //--------------------------------------------------------------------------
     bool Start()
     {
+        // スレッドが終了？
+        if(this->m_id != NULL)
+        {
+            // スレッド起動中
+            return false;
+        }
+
         // スレッド生成
         if(pthread_create(&(this->m_id), &(this->m_attr), Thread::ExecuteLancher, this) != 0)
         {
@@ -248,6 +258,13 @@ public:
     //--------------------------------------------------------------------------
     bool Cancel()
     {
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
+
         // スレッドキャンセル
         if(pthread_cancel(this->m_id) != 0)
         {
@@ -296,6 +313,13 @@ public:
     //--------------------------------------------------------------------------
     bool Resume()
     {
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
+
         // 中断状態を判定
         if(!this->m_isSuspend)
         {
@@ -325,6 +349,13 @@ public:
     //--------------------------------------------------------------------------
     bool Stop()
     {
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
+
         // スレッド強制終了
         if(pthread_kill(this->m_id,SIGTERM) != 0)
         {
@@ -344,6 +375,13 @@ public:
     //--------------------------------------------------------------------------
     bool IsActive()
     {
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
+
         // スレッド終了待ち(試用)
         if(pthread_tryjoin_np(this->m_id, NULL) != 0)
         {
@@ -360,6 +398,13 @@ public:
     //--------------------------------------------------------------------------
     bool WaitingCompletion()
     {
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
+
         // スレッド終了待ち
         if(pthread_join(this->m_id, NULL) != 0)
         {
@@ -383,6 +428,13 @@ public:
     bool WaitingCompletion(uint64_t timeOut)
     {
         struct timespec timeInfo;           // 時間情報
+
+        // スレッドが終了？
+        if(this->m_id == NULL)
+        {
+            // スレッド停止中
+            return false;
+        }
 
         // 時間情報取得
         if (clock_gettime(CLOCK_REALTIME, &timeInfo) == -1)

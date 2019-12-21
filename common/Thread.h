@@ -7,26 +7,37 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include "Object.h"
+#include "Exception.h"
 #include <stdio.h>
-#include <stdint.h>
 #include <bits/types.h>
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
-#include <errno.h>
-
-#include <string>
-#include <iostream>
 
 //==============================================================================
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
+// Thread例外クラス
+//------------------------------------------------------------------------------
+class ThreadException : public Exception
+{
+public:
+    //--------------------------------------------------------------------------
+    // コンストラクタ
+    //--------------------------------------------------------------------------
+    ThreadException(std::string msg) : Exception(msg)
+    {
+    };
+};
+
+//------------------------------------------------------------------------------
 // Threadクラス
 //------------------------------------------------------------------------------
-class Thread
+class Thread : public Object
 {
 protected:
     std::string m_name;                     // 名称
@@ -158,7 +169,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    Thread()
+    Thread() : Object()
     {
         // 初期化
         this->m_name = "";
@@ -172,7 +183,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    Thread(std::string name)
+    Thread(std::string name) : Object()
     {
         // 初期設定
         this->m_name = name;
@@ -186,7 +197,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    Thread(std::string name, pthread_attr_t attr)
+    Thread(std::string name, pthread_attr_t attr) : Object()
     {
         // 初期設定
         this->m_name = name;
@@ -200,7 +211,7 @@ public:
     //--------------------------------------------------------------------------
     // コピーコンストラクタ
     //--------------------------------------------------------------------------
-    Thread(Thread& thread)
+    Thread(Thread& thread) : Object()
     {
         // コピー
         this->m_name = thread.m_name;
@@ -217,7 +228,7 @@ public:
     ~Thread()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッドが終了しているので、何もしない
             return;
@@ -233,7 +244,7 @@ public:
     bool Start()
     {
         // スレッドが終了？
-        if(this->m_id != NULL)
+        if(this->m_id != 0)
         {
             // スレッド起動中
             return false;
@@ -259,7 +270,7 @@ public:
     bool Cancel()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;
@@ -314,7 +325,7 @@ public:
     bool Resume()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;
@@ -350,7 +361,7 @@ public:
     bool Stop()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;
@@ -376,7 +387,7 @@ public:
     bool IsActive()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;
@@ -399,7 +410,7 @@ public:
     bool WaitingCompletion()
     {
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;
@@ -430,7 +441,7 @@ public:
         struct timespec timeInfo;           // 時間情報
 
         // スレッドが終了？
-        if(this->m_id == NULL)
+        if(this->m_id == 0)
         {
             // スレッド停止中
             return false;

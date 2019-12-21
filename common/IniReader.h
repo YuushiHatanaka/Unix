@@ -165,14 +165,14 @@ public :
             // 先頭からの空白を削除
             _readline = _regex.Replace(_readline, "\"[ |\t]*#.*$", "\"");
 
-            // コメント行スキップ
-            if( _readline.c_str()[0] == '#' )
+            // 空行スキップ
+            if(_readline.empty())
             {
                 continue;
             }
 
-            // 空行スキップ
-            if(_readline.empty())
+            // コメント行スキップ
+            if( _readline.c_str()[0] == '#' )
             {
                 continue;
             }

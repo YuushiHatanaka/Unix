@@ -9,7 +9,7 @@
 //==============================================================================
 #include "Exception.h"
 #include "File.h"
-#include "CString.h"
+#include "StringCtrl.h"
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
@@ -50,7 +50,7 @@ private :
     //-----------------------------------------------------------------------------
     bool Read(std::string& readline)
     {
-        CString _string;                    // 文字列オブジェクト
+        StringCtrl _string;                 // 文字列操作オブジェクト
 
         // ファイルを1行ずつ読み込む
         while(getline(this->m_stream, readline))
@@ -166,7 +166,7 @@ public:
         std::vector<std::string> _columns;  // カラム一覧
         std::string _column;                // カラム
         bool _continue;                     // 継続フラグ
-        CString _string;                    // 文字列オブジェクト
+        StringCtrl _string;                 // 文字列操作オブジェクト
 
         // 初期化
         _column = "";

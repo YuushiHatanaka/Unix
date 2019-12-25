@@ -25,7 +25,7 @@ public:
     //-----------------------------------------------------------------------------
     // 文字列分割関数
     //-----------------------------------------------------------------------------
-    std::vector<std::string> Split(const std::string str, char sep)
+    static std::vector<std::string> Split(const std::string str, char sep)
     {
         std::vector<std::string> v;
         std::stringstream ss(str);
@@ -39,7 +39,7 @@ public:
     //-----------------------------------------------------------------------------
     // 文字列改行削除関数
     //-----------------------------------------------------------------------------
-    std::string DeleteCrlf(const std::string str)
+    static std::string DeleteCrlf(const std::string str)
     {
         const char CR = '\r';
         const char LF = '\n';
@@ -58,15 +58,15 @@ public:
     //-----------------------------------------------------------------------------
     // 空白削除(前後)関数
     //-----------------------------------------------------------------------------
-    std::string Trim(const std::string str)
+    static std::string Trim(const std::string str)
     {
         std::string _trim_string = str;     // 空白削除文字列
 
         // 空白削除(先頭)
-        _trim_string = this->TrimLeft(_trim_string);
+        _trim_string = StringCtrl::TrimLeft(_trim_string);
 
         // 空白削除(末尾)
-        _trim_string = this->TrimRight(_trim_string);
+        _trim_string = StringCtrl::TrimRight(_trim_string);
 
         // 空白削除文字列返却
         return _trim_string;
@@ -75,15 +75,15 @@ public:
     //-----------------------------------------------------------------------------
     // 文字列削除(前後)関数
     //-----------------------------------------------------------------------------
-    std::string Trim(const std::string str, const std::string trim)
+    static std::string Trim(const std::string str, const std::string trim)
     {
         std::string _trim_string = str;     // 空白削除文字列
 
         // 空白削除(先頭)
-        _trim_string = this->TrimLeft(_trim_string, trim);
+        _trim_string = StringCtrl::TrimLeft(_trim_string, trim);
 
         // 空白削除(末尾)
-        _trim_string = this->TrimRight(_trim_string, trim);
+        _trim_string = StringCtrl::TrimRight(_trim_string, trim);
 
         // 空白削除文字列返却
         return _trim_string;
@@ -92,16 +92,16 @@ public:
     //-----------------------------------------------------------------------------
     // 空白削除(先頭)関数
     //-----------------------------------------------------------------------------
-    std::string TrimLeft(const std::string str)
+    static std::string TrimLeft(const std::string str)
     {
         // 空白削除文字列返却
-        return this->TrimLeft( str, "[ |\t]" );;
+        return StringCtrl::TrimLeft( str, "[ |\t]" );;
     }
 
     //-----------------------------------------------------------------------------
     // 文字列削除(先頭)関数
     //-----------------------------------------------------------------------------
-    std::string TrimLeft(const std::string str, const std::string trim)
+    static std::string TrimLeft(const std::string str, const std::string trim)
     {
         std::string _trim_string = str;     // 空白削除文字列
         regex_t _regex;                     // 正規表現オブジェクト
@@ -145,16 +145,16 @@ public:
     //-----------------------------------------------------------------------------
     // 空白削除(末尾)関数
     //-----------------------------------------------------------------------------
-    std::string TrimRight(const std::string str)
+    static std::string TrimRight(const std::string str)
     {
         // 空白削除文字列返却
-        return this->TrimRight( str, "[ |\t]" );
+        return StringCtrl::TrimRight( str, "[ |\t]" );
     }
 
     //-----------------------------------------------------------------------------
     // 文字列削除(末尾)関数
     //-----------------------------------------------------------------------------
-    std::string TrimRight(const std::string str, const std::string trim)
+    static std::string TrimRight(const std::string str, const std::string trim)
     {
         std::string _trim_string = str;     // 空白削除文字列
         regex_t _regex;                     // 正規表現オブジェクト
@@ -198,7 +198,7 @@ public:
     //-----------------------------------------------------------------------------
     // 文字前ゼロ削除関数
     //-----------------------------------------------------------------------------
-    std::string DeleteFrontZeros(const std::string str)
+    static std::string DeleteFrontZeros(const std::string str)
     {
         std::string _trim_string = str;     // 削除文字列
 
@@ -216,7 +216,7 @@ public:
     //-----------------------------------------------------------------------------
     // ランダム文字列作成関数
     //-----------------------------------------------------------------------------
-    std::string MakeRandomStrings(int length)
+    static std::string MakeRandomStrings(int length)
     {
         std::stringstream _random;          // ランダム文字列
         char material[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

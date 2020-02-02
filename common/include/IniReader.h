@@ -48,30 +48,42 @@ private :
     std::string m_filename;                 // ファイル名
     std::ifstream m_stream;                 // ファイルストリーム
                                             // データitems
-    std::map<std::string, std::map<std::string,std::string> > m_items;
+    std::map<std::string, std::map<std::string, std::vector<std::string> > > m_items;
 private :
     //--------------------------------------------------------------------------
     // 登録
     //--------------------------------------------------------------------------
-    void Regston(std::string session,std::string key,std::string value)
+    void Regston(std::string session, std::string key, std::string value)
     {
-                                            // セッション内リスト
-        std::map<std::string,std::string> _section_list;
-
         // セッション登録判定
-        std::map<std::string, std::map<std::string,std::string> >::const_iterator _section_itr = this->m_items.find(session);
-        if( _section_itr != this->m_items.end() )
+        std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator _section_itr = this->m_items.find(session);
+        if(_section_itr != this->m_items.end())
         {
             // セッション登録あり
-            std::map<std::string,std::string> _map = this->m_items[session];
-            _map[key] = value;
-            this->m_items[session] = _map;
+            std::map<std::string, std::vector<std::string> > _map = this->m_items[session];
+
+            // キー登録判定
+            std::map<std::string, std::vector<std::string> >::iterator _key_itr = this->m_items[session].find(key);
+            if(_key_itr != this->m_items[session].end())
+            {
+                // キー登録あり
+                this->m_items[session][key].push_back(value);
+            }
+            else
+            {
+                // キー登録なし
+                std::vector<std::string> _values;
+                _values.push_back(value);
+                this->m_items[session][key] = _values;
+            }
         }
         else
         {
-            // セッション登録なし
-            std::map<std::string,std::string> _map;
-            _map[key] = value;
+            // セッション登録なし(セッション登録)
+            std::vector<std::string> _values;
+            std::map<std::string, std::vector<std::string> > _map;
+            _values.push_back(value);
+            _map[key] = _values;
             this->m_items[session] = _map;
         }
     }
@@ -81,15 +93,21 @@ private :
     //--------------------------------------------------------------------------
     void Destroy()
     {
-        // セッション毎に繰り返し
-        for(std::map<std::string, std::map<std::string,std::string> >::const_iterator section_itr = this->m_items.begin(); section_itr != this->m_items.end(); ++section_itr)
+        // セッション分繰り返し
+        for(std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator _section_itr = this->m_items.begin(); _section_itr != this->m_items.end(); ++_section_itr)
         {
             // キー、値取り出し
-            std::string _section_key = section_itr->first;
-            std::map<std::string,std::string> _section_list = section_itr->second;
+            std::string _section_key = _section_itr->first;
+            std::map<std::string, std::vector<std::string> > _keys = _section_itr->second;
+            for(std::map<std::string, std::vector<std::string> >::iterator _key_itr = _keys.begin(); _key_itr != _keys.end(); ++_key_itr)
+            {
+                // クリア
+                std::vector<std::string> _values = _key_itr->second;
+                std::vector<std::string>().swap(_values);
+            }
 
             // クリア
-            _section_list.clear();
+            _keys.clear();
         }
 
         // 全体クリア
@@ -228,11 +246,10 @@ public :
     //--------------------------------------------------------------------------
     bool Find(std::string session)
     {
-                                            // セッション内リスト
-        std::map<std::string,std::string> _section_list;
+        // 要素を取得
+        std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator _section_itr = this->m_items.find(session);
 
         // セッション登録判定
-        std::map<std::string, std::map<std::string,std::string> >::const_iterator _section_itr = this->m_items.find(session);
         if( _section_itr != this->m_items.end() )
         {
             // セッション登録あり
@@ -247,7 +264,7 @@ public :
     //--------------------------------------------------------------------------
     // 要素取得
     //--------------------------------------------------------------------------
-    std::map<std::string, std::map<std::string,std::string> > Items()
+    std::map<std::string, std::map<std::string, std::vector<std::string> > > Items()
     {
         // 要素を返却
         return this->m_items;
@@ -256,25 +273,34 @@ public :
     //--------------------------------------------------------------------------
     // 要素取得
     //--------------------------------------------------------------------------
-    std::map<std::string, std::string> Items(std::string session)
+    std::map<std::string, std::vector<std::string> > Items(std::string session)
     {
-        // セッション登録判定
-        std::map<std::string, std::map<std::string,std::string> >::const_iterator section_itr = this->m_items.find(session);
+        // 要素を取得
+        std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator section_itr = this->m_items.find(session);
 
-        // 要素を返却
-        return section_itr->second;
+        // 取得判定
+        if(section_itr != this->m_items.end())
+        {
+            // セッション登録あり
+            return section_itr->second;
+        }
+        else
+        {
+            // セッション登録なし
+            return std::map<std::string, std::vector<std::string> >();
+        }
     }
 
     //--------------------------------------------------------------------------
     // 要素取得
     //--------------------------------------------------------------------------
-    std::string Items(std::string session,std::string key)
+    std::vector<std::string> Items(std::string session, std::string key)
     {
         // セッション内要素を取得
-        std::map<std::string, std::string> _session_item = this->Items(session);
+        std::map<std::string, std::vector<std::string> > _session_item = this->Items(session);
 
         // キー登録判定
-        std::map<std::string,std::string>::const_iterator _itr = _session_item.find(key);
+        std::map<std::string, std::vector<std::string> >::const_iterator _itr = _session_item.find(key);
         if( _itr != _session_item.end() )
         {
             // キー登録あり
@@ -283,7 +309,7 @@ public :
         else
         {
             // キー登録なし
-            return "";
+            return std::vector<std::string>();
         }
     }
 
@@ -295,20 +321,26 @@ public :
         std::stringstream _string;          // 返却文字列
 
         // セッション分繰り返し
-        for(std::map<std::string, std::map<std::string,std::string> >::const_iterator _section_itr = this->m_items.begin(); _section_itr != this->m_items.end(); ++_section_itr)
+        for(std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator _section_itr = this->m_items.begin(); _section_itr != this->m_items.end(); ++_section_itr)
         {
             // セッション文字列化
             _string << "[" << _section_itr->first << "]\n";
 
             // KEY分繰り返し
-            std::map<std::string,std::string> _keys = _section_itr->second;
-            for(std::map<std::string,std::string>::const_iterator _key_itr = _keys.begin(); _key_itr != _keys.end(); ++_key_itr)
+            std::map<std::string, std::vector<std::string> > _keys = _section_itr->second;
+            for(std::map<std::string, std::vector<std::string> >::const_iterator _key_itr = _keys.begin(); _key_itr != _keys.end(); ++_key_itr)
             {
                 // KEY文字列化
-                _string << " " << _key_itr->first << " = ";
+                _string << " " << _key_itr->first << "\n";
 
                 // VALUE文字列化
-                _string << " " << _key_itr->second << "\n";
+                std::vector<std::string> _value = _key_itr->second;
+
+                for(std::vector<std::string>::const_iterator _value_itr = _value.begin(); _value_itr != _value.end(); ++_value_itr)
+                {
+                    // VALUE文字列化
+                    _string << " └ " << *_value_itr << "\n";
+                }
             }
 
             // 改行追加

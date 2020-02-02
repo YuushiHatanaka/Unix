@@ -261,7 +261,7 @@ public:
                 continue;
             }
             // リストに追加
-            std::string _match_string( base_str, startIndex, endIndex );
+            std::string _match_string( base_str, startIndex, endIndex-startIndex );
             _list.push_back(_match_string);
         }
 

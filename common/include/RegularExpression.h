@@ -8,6 +8,7 @@
 // インクルードファイル
 //==============================================================================
 #include "Exception.h"
+#include <stdio.h>
 #include <stdint.h>
 #include <regex.h>
 #include <vector>
@@ -140,35 +141,8 @@ public:
     //-------------------------------------------------------------------------
     std::string Replace(std::string base_str,std::string regex_str,std::string replace_str)
     {
-        regex_t _regex;                     // 正規表現オブジェクト
-        regmatch_t _regmatch[1];            // 正規表現マッチングオブジェクト
-        // 一致数
-        size_t _match_count = sizeof(_regmatch)/sizeof(regmatch_t);
-        // 置換文字列
-        std::string _result_str = base_str;
-
-        // 正規表現オブジェクトのコンパイル
-        if(regcomp( &_regex, regex_str.c_str(), REG_EXTENDED|REG_NEWLINE ) != 0 ) {
-            throw RegularExpressionException("regcomp failed.");
-        }
-
-        // パターンマッチング
-        if( regexec( &_regex, base_str.c_str(), _match_count, _regmatch, 0 ) != 0 ) {
-            // 不一致
-            regfree( &_regex );
-            return _result_str;
-        }
-
-        // 一致
-        if(!( _regmatch[0].rm_so == -1 || _regmatch[0].rm_eo == -1 )) {
-            _result_str = base_str.replace( _regmatch[0].rm_so, _regmatch[0].rm_eo - _regmatch[0].rm_so, replace_str );
-        }
-
-        // 後処理
-        regfree( &_regex );
-
         // 置換文字列を返却
-        return _result_str;
+        return this->Replace(base_str, regex_str, replace_str, REG_EXTENDED|REG_NEWLINE);
     }
 
     //-------------------------------------------------------------------------
@@ -189,6 +163,17 @@ public:
         // 正規表現マッチングオブジェクト生成
         _match_count = _regex.re_nsub+1;
         _regmatch = new regmatch_t[_match_count];
+
+        // 一致カウンタ判定
+        if(!(_match_count>0))
+        {
+            // 後処理
+            regfree( &_regex );
+            delete[] _regmatch;
+
+            // 元文字列を返却
+            return base_str;
+        }
 
         // 一致しなくなるまで実施する
         while(1) {

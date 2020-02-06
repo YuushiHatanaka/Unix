@@ -178,10 +178,10 @@ public :
             _line_no += 1;
 
             // 先頭からの空白を削除
-            _readline = _regex.Replace(_readline, "^[ |\t]*", "");
+            _readline = _regex.Replace(_readline, "^[ |\t]+", "");
 
             // 先頭からの空白を削除
-            _readline = _regex.Replace(_readline, "\"[ |\t]*#.*$", "\"");
+            _readline = _regex.Replace(_readline, "\"[ |\t]+#.*$", "\"");
 
             // 空行スキップ
             if(_readline.empty())

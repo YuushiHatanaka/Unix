@@ -17,7 +17,7 @@
 // TreeNodeCollectionクラス
 //------------------------------------------------------------------------------
 template <class T>
-class TreeNodeCollection : private std::list<T>
+class TreeNodeCollection : public std::list<T>
 {
 private:
     typedef typename TreeNodeCollection<T>::iterator Iterator;
@@ -73,11 +73,24 @@ public:
     //--------------------------------------------------------------------------
     // 削除
     //--------------------------------------------------------------------------
-    void Remove(T insert_node)
+    void Remove()
+    {
+        // 子ノード登録分繰り返し
+        for(size_t i=TreeNodeCollection::Count()-1; TreeNodeCollection::Count()>0; i--)
+        {
+            // 子ノード削除
+            TreeNodeCollection::RemoveAt(i);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // 削除
+    //--------------------------------------------------------------------------
+    void Remove(T remove_node)
     {
         for(Iterator itr=TreeNodeCollection::begin(); itr!=TreeNodeCollection::end(); ++itr)
         {
-            if(*itr==insert_node)
+            if(*itr==remove_node)
             {
                 TreeNodeCollection::erase(itr);
                 return;
@@ -142,14 +155,13 @@ public:
 template <typename T>
 class TreeNode
 {
-public:
-    TreeNode* Parent;                       // 親ノード
-    TreeNode* PrevNode;                     // 兄弟ノード(前)
-    TreeNode* NextNode;                     // 兄弟ノード(後)
-    TreeNodeCollection<TreeNode*> Nodes;    // 子ノード
-    TreeNode* FirstNode;                    // 子ノード(先頭)
-    TreeNode* LastNode;                     // 子ノード(最終)
-    T Value;                                // 値
+private:
+    TreeNode<T>* m_Parent;                  // 親ノード
+    TreeNode<T>* m_PrevNode;                // 兄ノード
+    TreeNode<T>* m_NextNode;                // 弟ノード
+                                            // 子ノードリスト
+    TreeNodeCollection<TreeNode<T>*> m_Nodes;
+    T m_Value;                              // 値
 
 public:
     //--------------------------------------------------------------------------
@@ -158,7 +170,10 @@ public:
     TreeNode(T& value)
     {
         // 初期設定
-        TreeNode::Value = value;
+        TreeNode::m_Parent = NULL;
+        TreeNode::m_PrevNode = NULL;
+        TreeNode::m_NextNode = NULL;
+        TreeNode::m_Value = value;
     }
 
     //--------------------------------------------------------------------------
@@ -166,21 +181,91 @@ public:
     //--------------------------------------------------------------------------
     virtual ~TreeNode()
     {
-        // 子ノード削除
-        TreeNode::Remove();
     }
 
     //--------------------------------------------------------------------------
-    // 子ノード削除
+    // 値
     //--------------------------------------------------------------------------
-    void Remove()
+    T& Value()
     {
-        // 子ノード登録分繰り返し
-        for(size_t i=TreeNode::Nodes.Count()-1; TreeNode::Nodes.Count()>0; i--)
+        return TreeNode<T>::m_Value;
+    }
+
+    //--------------------------------------------------------------------------
+    // 親ノード
+    //--------------------------------------------------------------------------
+    TreeNode<T>*& Parent()
+    {
+        return TreeNode<T>::m_Parent;
+    }
+
+    //--------------------------------------------------------------------------
+    // 兄ノード
+    //--------------------------------------------------------------------------
+    TreeNode<T>*& PrevNode()
+    {
+        return TreeNode<T>::m_PrevNode;
+    }
+
+    //--------------------------------------------------------------------------
+    // 弟ノード
+    //--------------------------------------------------------------------------
+    TreeNode<T>*& NextNode()
+    {
+        return TreeNode<T>::m_NextNode;
+    }
+
+    //--------------------------------------------------------------------------
+    // 子ノード
+    //--------------------------------------------------------------------------
+    TreeNodeCollection<TreeNode<T>*>& Child()
+    {
+        return TreeNode<T>::m_Nodes;
+    }
+
+    //--------------------------------------------------------------------------
+    // 子ノード(先頭)
+    //--------------------------------------------------------------------------
+    TreeNode<T>* FirstNode()
+    {
+        return TreeNode<T>::m_Nodes.begin();
+    }
+
+    //--------------------------------------------------------------------------
+    // 子ノード(最終)
+    //--------------------------------------------------------------------------
+    TreeNode<T>* LastNode()
+    {
+        return TreeNode<T>::m_Nodes.end();
+    }
+
+    //--------------------------------------------------------------------------
+    // 子ノード追加
+    //--------------------------------------------------------------------------
+    TreeNode* AddChild(T& value)
+    {
+        // 子ノードオブジェクト生成
+        TreeNode<T>* _AddChild = new TreeNode<T>(value);
+
+        // 兄弟ノード設定
+        if(TreeNode<T>::m_Nodes.size() > 0)
         {
-            // 子ノード削除
-            TreeNode::Nodes.RemoveAt(i);
+            // リストの1つ前の弟ノード
+            TreeNode<T>::m_Nodes[TreeNode<T>::m_Nodes.size()-1]->m_NextNode = _AddChild;
+
+            // リストの1つ前が兄ノード
+            _AddChild->m_PrevNode = TreeNode<T>::m_Nodes[TreeNode<T>::m_Nodes.size()-1];
+            _AddChild->m_NextNode = NULL;
         }
+
+        // 子ノードオブジェクト登録
+        TreeNode<T>::m_Nodes.push_back(_AddChild);
+
+        // 親ノード登録
+        _AddChild->m_Parent = this;
+
+        // 子ノードオブジェクト返却
+        return _AddChild;
     }
 };
 #endif                                      // 二重インクルード防止

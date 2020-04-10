@@ -23,8 +23,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    StringException(std::string msg) : Exception(msg)
+    StringException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 };
 
@@ -95,6 +101,14 @@ std::cout << "0\n";
     String(const std::stringstream& value) : Object()
     {
         this->m_Data << value.str();
+    }
+
+    //--------------------------------------------------------------------------
+    // コンストラクタ
+    //--------------------------------------------------------------------------
+    String(const int value) : Object()
+    {
+        this->m_Data << value;
     }
 
     //--------------------------------------------------------------------------
@@ -411,14 +425,6 @@ std::cout << "0\n";
     }
 
     //--------------------------------------------------------------------------
-    // ポインタ返却
-    //--------------------------------------------------------------------------
-    const char* c_str()
-    {
-        return this->m_Data.str().c_str();
-    }
-
-    //--------------------------------------------------------------------------
     // 部分文字列返却
     //--------------------------------------------------------------------------
     std::string substr(size_t pos)
@@ -468,23 +474,20 @@ std::cout << "0\n";
     //--------------------------------------------------------------------------
     std::string DeleteCrlf()
     {
-        // 自身をクリア
-        this->clear();
-
         // 改行を削除
         const char CR = '\r';
         const char LF = '\n';
-        std::string destStr;
+        std::stringstream destStr;
         for(std::string::const_iterator it=this->m_Data.str().begin(); it!=this->m_Data.str().end(); ++it)
         {
             if( *it != CR && *it != LF )
             {
-                destStr += *it;
+                destStr << *it;
             }
         }
 
         // 文字列を返却
-        return destStr;
+        return destStr.str();
     }
 
     //--------------------------------------------------------------------------
@@ -502,7 +505,6 @@ std::cout << "0\n";
     std::string Trim(const std::string trim)
     {
         std::string _trim_string;           // 空白削除文字列
-
 
         // 先頭空白削除
         _trim_string = this->TrimLeft(this->m_Data.str(), trim);
@@ -588,6 +590,23 @@ std::cout << "0\n";
 
         // 置換文字列返却
         return _re.Replace(this->m_Data.str(), regex_str, replace_str, cflg);
+    }
+
+    //--------------------------------------------------------------------------
+    // Binary化
+    //--------------------------------------------------------------------------
+    Binary ToBinary()
+    {
+        Binary _Binary;                     // Binaryオブジェクト
+
+        // データ設定
+        _Binary.Set((u_char*)this->str().c_str(), this->length());
+
+        // 終端追加
+        _Binary.Set('\0');
+
+        // Binaryオブジェクトを返却
+        return _Binary;
     }
 };
 #endif                                      // 二重インクルード防止

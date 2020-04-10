@@ -27,8 +27,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    TimeSpanException(std::string msg) : Exception(msg)
+    TimeSpanException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 };
 
@@ -59,7 +65,7 @@ private:
         this->m_seconds = 0;
         this->m_milliseconds = 0;
         this->m_ticks = 0;
-        this->m_default_format = "%d.%h:%m:%s.%fffffff";
+        this->m_default_format = "%d.%h:%m:%s.%fff";
     }
 
     //--------------------------------------------------------------------------
@@ -342,11 +348,26 @@ public:
         int64_t _days = value/24;
         int64_t _hours = value-(_days*24);
 
-        // 加算(秒)
+        // 加算(時)
         this->m_hours += _hours;
 
-        // 加算(分)
-        this->AddDays(_days);
+        // 加算値再計算
+        if(this->m_hours < 0)
+        {
+            this->m_hours += 24;
+            _days -= 1;
+        }
+        else if(this->m_hours > 24)
+        {
+            this->m_hours -= 24;
+            _days += 1;
+        }
+
+        // 加算(日)
+        if(_days != 0)
+        {
+            this->AddDays(_days);
+        }
 
         // 自身を返却
         return *this;
@@ -361,11 +382,26 @@ public:
         int64_t _hours = value/60;
         int64_t _minutes = value-(_hours*60);
 
-        // 加算(秒)
+        // 加算(分)
         this->m_minutes += _minutes;
 
-        // 加算(分)
-        this->AddHours(_hours);
+        // 加算値再計算
+        if(this->m_minutes < 0)
+        {
+            this->m_minutes += 60;
+            _hours -= 1;
+        }
+        else if(this->m_minutes > 60)
+        {
+            this->m_minutes -= 60;
+            _hours += 1;
+        }
+
+        // 加算(時)
+        if(_hours != 0)
+        {
+            this->AddHours(_hours);
+        }
 
         // 自身を返却
         return *this;
@@ -383,8 +419,23 @@ public:
         // 加算(秒)
         this->m_seconds += _seconds;
 
+        // 加算値再計算
+        if(this->m_seconds < 0)
+        {
+            this->m_seconds += 60;
+            _minutes -= 1;
+        }
+        else if(this->m_seconds > 60)
+        {
+            this->m_seconds -= 60;
+            _minutes += 1;
+        }
+
         // 加算(分)
-        this->AddMinutes(_minutes);
+        if(_minutes != 0)
+        {
+            this->AddMinutes(_minutes);
+        }
 
         // 自身を返却
         return *this;
@@ -402,8 +453,23 @@ public:
         // 加算(ミリ秒)
         this->m_milliseconds += _milliseconds;
 
+        // 加算値再計算
+        if(this->m_milliseconds < 0)
+        {
+            this->m_milliseconds += 1000;
+            _seconds -= 1;
+        }
+        else if(this->m_milliseconds > 1000)
+        {
+            this->m_milliseconds -= 1000;
+            _seconds += 1;
+        }
+
         // 加算(秒)
-        this->AddSeconds(_seconds);
+        if(_seconds != 0)
+        {
+            this->AddSeconds(_seconds);
+        }
 
         // 自身を返却
         return *this;
@@ -662,12 +728,12 @@ public:
     //--------------------------------------------------------------------------
     // getter
     //--------------------------------------------------------------------------
-    int64_t Days(){ return this->m_days;}
-    int64_t Hours(){ return this->m_hours;}
-    int64_t Minutes(){ return this->m_minutes;}
-    int64_t Seconds(){ return this->m_seconds;}
-    int64_t Milliseconds(){ return this->m_milliseconds;}
-    int64_t Ticks(){ return this->m_ticks;}
+    int64_t Days() const { return this->m_days;}
+    int64_t Hours() const { return this->m_hours;}
+    int64_t Minutes() const { return this->m_minutes;}
+    int64_t Seconds() const { return this->m_seconds;}
+    int64_t Milliseconds() const { return this->m_milliseconds;}
+    int64_t Ticks() const { return this->m_ticks;}
 
     //--------------------------------------------------------------------------
     // 換算時間(日)

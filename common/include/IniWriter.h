@@ -27,8 +27,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    IniWriterException(std::string msg) : Exception(msg)
+    IniWriterException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 
     //--------------------------------------------------------------------------
@@ -129,7 +135,7 @@ public :
     //--------------------------------------------------------------------------
     // 更新
     //--------------------------------------------------------------------------
-    void Update(std::string session, std::string key, int index, std::string value)
+    void Update(std::string session, std::string key, size_t index, std::string value)
     {
         // セッション登録判定
         std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator _section_itr = this->m_items.find(session);

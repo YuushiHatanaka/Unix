@@ -22,8 +22,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    TcpSocketException(std::string msg) : Exception(msg)
+    TcpSocketException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 };
 

@@ -67,8 +67,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPoolException(std::string msg) : Exception(msg)
+    MemoryPoolException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 
     //--------------------------------------------------------------------------

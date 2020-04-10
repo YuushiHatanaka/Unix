@@ -8,12 +8,28 @@
 // インクルードファイル
 //==============================================================================
 #include "Exception.h"
+#include "Object.h"
+#include "Binary.h"
 #include "TimeSpan.h"
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
 #include <iomanip>
 #include <sstream>
+
+//==============================================================================
+// 定数定義
+//==============================================================================
+//------------------------------------------------------------------------------
+// 日時種別
+//------------------------------------------------------------------------------
+typedef enum _DateTimeType
+{
+    DateTimeType_Unknown = 0,               // 不明
+    DateTimeType_Timespec,                  // struct timespec
+    DateTimeType_Tm,                        // struct tm
+    DateTimeType_Timet,                     // time_t
+} DateTimeType;
 
 //==============================================================================
 // クラス定義
@@ -27,25 +43,32 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTimeException(std::string msg) : Exception(msg)
+    DateTimeException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 };
 
 //------------------------------------------------------------------------------
 // DateTimeクラス
 //------------------------------------------------------------------------------
-class DateTime
+class DateTime : public Object
 {
 private:
     struct timespec m_timespec;             // 値(struct timespec)
     struct tm m_tmval;                      // 値(struct tm)
     time_t m_value;                         // 値(time_t)
+    std::string m_format;                   // フォーマット(Default)
 
 public:
-    struct timespec GetTimesec() { return this->m_timespec; }
-    struct tm GetTmval() { return this->m_tmval; }
-    time_t GetValue() { return this->m_value; }
+    struct timespec GetTimesec() const { return this->m_timespec; }
+    struct tm GetTmval() const { return this->m_tmval; }
+    time_t GetValue() const { return this->m_value; }
 
 private:
     //--------------------------------------------------------------------------
@@ -54,8 +77,10 @@ private:
     void SetNow()
     {
         // 現在時刻取得
+        clock_gettime(CLOCK_REALTIME, &(this->m_timespec));
+/*
         timespec_get(&(this->m_timespec), TIME_UTC);
-
+*/
         // 時刻変換
         this->ConvertTimeVal();
     }
@@ -84,7 +109,7 @@ private:
     //--------------------------------------------------------------------------
     // 時刻変換
     //--------------------------------------------------------------------------
-    void ConvertTimeVal(const struct tm& tmval)
+    void ConvertTimeVal(const struct tm& tmval, int64_t msec)
     {
         // 時刻変換(struct tm⇒time_t)
         struct tm _value = tmval;
@@ -92,20 +117,36 @@ private:
 
         // 時刻変換(time_t⇒struct timeval)
         this->m_timespec.tv_sec = this->m_value;
-        this->m_timespec.tv_nsec = 0;
+        this->m_timespec.tv_nsec = msec * 1000000;
     }
 
     //--------------------------------------------------------------------------
     // 時刻変換
     //--------------------------------------------------------------------------
-    void ConvertTimeVal(const time_t& value)
+    void ConvertTimeVal(const time_t& value, int64_t msec)
     {
         // 時刻変換(time_t⇒struct tm)
         localtime_r(&value, &(this->m_tmval));
 
         // 時刻変換(time_t⇒struct timeval)
         this->m_timespec.tv_sec = this->m_value;
-        this->m_timespec.tv_nsec = 0;
+        this->m_timespec.tv_nsec = msec * 1000000;
+    }
+
+    //--------------------------------------------------------------------------
+    // 時刻変換
+    //--------------------------------------------------------------------------
+    void ConvertTimeVal(const TimeSpan& timeSpan)
+    {
+        // 時刻形式変換
+        this->m_timespec.tv_sec = (timeSpan.Days()*24*60*60)+
+                                  (timeSpan.Hours()*60*60)+
+                                  (timeSpan.Minutes()*60)+
+                                   timeSpan.Seconds();
+        this->m_timespec.tv_nsec = timeSpan.Milliseconds()*1000000;
+
+        // 時刻変換
+        this->ConvertTimeVal();
     }
 
     //--------------------------------------------------------------------------
@@ -190,8 +231,11 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTime()
+    DateTime() : Object()
     {
+        // 初期設定
+        this->m_format = "%Y/%m/%d %H:%M:%S";
+
         // 現在時刻設定
         this->SetNow();
     }
@@ -199,9 +243,10 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTime(const struct timespec& value)
+    DateTime(const struct timespec& value) : Object()
     {
         // 初期設定
+        this->m_format = "%Y/%m/%d %H:%M:%S";
         this->m_timespec = value;
 
         // 時刻変換
@@ -211,21 +256,23 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTime(const struct tm& value)
+    DateTime(const struct tm& value) : Object()
     {
         // 初期設定
+        this->m_format = "%Y/%m/%d %H:%M:%S";
         this->m_tmval = value;
 
         // 時刻変換
-        this->ConvertTimeVal(value);
+        this->ConvertTimeVal(value, 0);
     }
 
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTime(const time_t& value)
+    DateTime(const time_t& value) : Object()
     {
         // 初期設定
+        this->m_format = "%Y/%m/%d %H:%M:%S";
         this->m_value = value;
 
         // 時刻変換
@@ -235,7 +282,7 @@ public:
     //--------------------------------------------------------------------------
     // コピーコンストラクタ
     //--------------------------------------------------------------------------
-    DateTime(const DateTime& datetime)
+    DateTime(const DateTime& datetime) : Object()
     {
         // コピー
         this->Copy(datetime);
@@ -256,6 +303,22 @@ public:
     time_t Value(){ return this->m_value;}
 
     //--------------------------------------------------------------------------
+    // フォーマット設定
+    //--------------------------------------------------------------------------
+    void SetFormat(std::string format)
+    {
+        this->m_format = format;
+    }
+
+    //--------------------------------------------------------------------------
+    // フォーマット取得
+    //--------------------------------------------------------------------------
+    std::string GetFormat()
+    {
+        return this->m_format;
+    }
+
+    //--------------------------------------------------------------------------
     // 現在時刻取得
     //--------------------------------------------------------------------------
     DateTime Now()
@@ -267,6 +330,36 @@ public:
     }
 
     //--------------------------------------------------------------------------
+    // 解析
+    //--------------------------------------------------------------------------
+    DateTime& Parse(std::string s)
+    {
+        // 解析時刻を返却
+        return this->Parse(this->m_format, s);
+    }
+
+    //--------------------------------------------------------------------------
+    // 解析
+    //--------------------------------------------------------------------------
+    DateTime& Parse(std::string format, std::string s)
+    {
+        struct tm _parse;                   // 解析時刻
+
+        // 文字列解析
+        if(strptime(s.c_str(), format.c_str(), &_parse) == NULL)
+        {
+            // 例外
+            throw DateTimeException("DateTime(文字列)の解析に失敗しました：[" + format + "]["+ s +"]");
+        }
+
+        // 時刻変換
+        this->ConvertTimeVal(_parse, 0);
+
+        // 自身を返却
+        return *this;
+    }
+
+    //--------------------------------------------------------------------------
     // コピー
     //--------------------------------------------------------------------------
     void Copy(const DateTime& datetime)
@@ -275,6 +368,7 @@ public:
         this->m_timespec = datetime.m_timespec;
         this->m_tmval = datetime.m_tmval;
         this->m_value = datetime.m_value;
+        this->m_format = datetime.m_format;
     }
 
     //--------------------------------------------------------------------------
@@ -325,7 +419,7 @@ public:
         this->m_tmval = value;
 
         // 時刻変換
-        this->ConvertTimeVal(value);
+        this->ConvertTimeVal(value, this->m_timespec.tv_nsec/1000000);
 
         // 自身を返却
         return *this;
@@ -779,10 +873,79 @@ public:
     }
 
     //--------------------------------------------------------------------------
+    // 取得(年)
+    //--------------------------------------------------------------------------
+    int64_t Year()
+    {
+        // 年を返却
+        return this->m_tmval.tm_year + 1900;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(月)
+    //--------------------------------------------------------------------------
+    int64_t Month()
+    {
+        // 月を返却
+        return this->m_tmval.tm_mon + 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(日)
+    //--------------------------------------------------------------------------
+    int64_t Day()
+    {
+        // 日を返却
+        return this->m_tmval.tm_mday;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(時)
+    //--------------------------------------------------------------------------
+    int64_t Hour()
+    {
+        // 時を返却
+        return this->m_tmval.tm_hour;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(分)
+    //--------------------------------------------------------------------------
+    int64_t Minute()
+    {
+        // 分を返却
+        return this->m_tmval.tm_min;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(秒)
+    //--------------------------------------------------------------------------
+    int64_t Second()
+    {
+        // 秒を返却
+        return this->m_tmval.tm_sec;
+    }
+
+    //--------------------------------------------------------------------------
+    // 取得(ミリ秒)
+    //--------------------------------------------------------------------------
+    int64_t Millisecond()
+    {
+        // ミリ秒を返却
+        return this->m_timespec.tv_nsec/1000000;
+    }
+
+    //--------------------------------------------------------------------------
     // 加算(年)
     //--------------------------------------------------------------------------
-    DateTime& AddYears(uint64_t value)
+    DateTime& AddYears(int64_t value)
     {
+        // 年を加算
+        this->m_tmval.tm_year += value;
+
+        // 変換
+        this->ConvertTimeVal(this->m_tmval, this->m_timespec.tv_nsec/1000000);
+
         // 自身を返却
         return *this;
     }
@@ -790,8 +953,29 @@ public:
     //--------------------------------------------------------------------------
     // 加算(月)
     //--------------------------------------------------------------------------
-    DateTime& AddMonths(uint64_t value)
+    DateTime& AddMonths(int64_t value)
     {
+        // 追加月／年の計算
+        int64_t _addyear = value/12;
+        int64_t _addmonth = value - (_addyear*12);
+
+        // 月加算
+        if(_addmonth != 0)
+        {
+            this->m_tmval.tm_mon += _addmonth;
+        }
+
+        // 年加算
+        if(_addyear != 0)
+        {
+            this->AddYears(_addyear);
+        }
+        else
+        {
+            // 変換
+            this->ConvertTimeVal(this->m_tmval, this->m_timespec.tv_nsec/1000000);
+        }
+
         // 自身を返却
         return *this;
     }
@@ -799,9 +983,17 @@ public:
     //--------------------------------------------------------------------------
     // 加算(日)
     //--------------------------------------------------------------------------
-    DateTime& AddDays(uint64_t value)
+    DateTime& AddDays(int64_t value)
     {
-        // TODO:未実装
+        // 自身のTimeSpanオブジェクトを取得
+        TimeSpan _timeSpan = this->ToTimeSpan();
+
+        // 加算
+        _timeSpan.AddDays(value);
+
+        // 変換
+        this->ConvertTimeVal(_timeSpan);
+
         // 自身を返却
         return *this;
     }
@@ -809,9 +1001,17 @@ public:
     //--------------------------------------------------------------------------
     // 加算(時)
     //--------------------------------------------------------------------------
-    DateTime& AddHours(uint64_t value)
+    DateTime& AddHours(int64_t value)
     {
-        // TODO:未実装
+        // 自身のTimeSpanオブジェクトを取得
+        TimeSpan _timeSpan = this->ToTimeSpan();
+
+        // 加算
+        _timeSpan.AddHours(value);
+
+        // 変換
+        this->ConvertTimeVal(_timeSpan);
+
         // 自身を返却
         return *this;
     }
@@ -819,9 +1019,17 @@ public:
     //--------------------------------------------------------------------------
     // 加算(分)
     //--------------------------------------------------------------------------
-    DateTime& AddMinutes(uint64_t value)
+    DateTime& AddMinutes(int64_t value)
     {
-        // TODO:未実装
+        // 自身のTimeSpanオブジェクトを取得
+        TimeSpan _timeSpan = this->ToTimeSpan();
+
+        // 加算
+        _timeSpan.AddMinutes(value);
+
+        // 変換
+        this->ConvertTimeVal(_timeSpan);
+
         // 自身を返却
         return *this;
     }
@@ -829,9 +1037,17 @@ public:
     //--------------------------------------------------------------------------
     // 加算(秒)
     //--------------------------------------------------------------------------
-    DateTime& AddSeconds(uint64_t value)
+    DateTime& AddSeconds(int64_t value)
     {
-        // TODO:未実装
+        // 自身のTimeSpanオブジェクトを取得
+        TimeSpan _timeSpan = this->ToTimeSpan();
+
+        // 加算
+        _timeSpan.AddSeconds(value);
+
+        // 変換
+        this->ConvertTimeVal(_timeSpan);
+
         // 自身を返却
         return *this;
     }
@@ -839,11 +1055,65 @@ public:
     //--------------------------------------------------------------------------
     // 加算(ミリ秒)
     //--------------------------------------------------------------------------
-    DateTime& AddMilliseconds(uint64_t value)
+    DateTime& AddMilliseconds(int64_t value)
     {
-        // TODO:未実装
+        // 自身のTimeSpanオブジェクトを取得
+        TimeSpan _timeSpan = this->ToTimeSpan();
+
+        // 加算
+        _timeSpan.AddMilliseconds(value);
+
+        // 変換
+        this->ConvertTimeVal(_timeSpan);
+
         // 自身を返却
         return *this;
+    }
+
+    //--------------------------------------------------------------------------
+    // Binary化
+    //--------------------------------------------------------------------------
+    Binary ToBinary(DateTimeType type)
+    {
+        Binary _Binary;                     // Binaryオブジェクト
+
+        // 日時種別で分岐
+        switch(type)
+        {
+            case DateTimeType_Timespec :
+                // データ設定
+                _Binary.Set((u_char*)&(this->m_timespec), sizeof(this->m_timespec));
+                break;
+            case DateTimeType_Tm :
+                // データ設定
+                _Binary.Set((u_char*)&(this->m_tmval), sizeof(this->m_tmval));
+                break;
+            case DateTimeType_Timet :
+                // データ設定
+                _Binary.Set((u_char*)&(this->m_value), sizeof(this->m_value));
+                break;
+            default :
+                // 例外
+                throw DateTimeException("Binar化解析に失敗しました:[%d]", type);
+        }
+
+        // Binaryオブジェクトを返却
+        return _Binary;
+    }
+
+    //--------------------------------------------------------------------------
+    // TimeSpan取得
+    //--------------------------------------------------------------------------
+    TimeSpan ToTimeSpan()
+    {
+        TimeSpan _result;
+
+        // 自身の値を追加
+        _result.AddMilliseconds(this->m_timespec.tv_nsec/1000000);
+        _result.AddSeconds(this->m_timespec.tv_sec);
+
+        // 計算結果を返却
+        return _result;
     }
 
     //--------------------------------------------------------------------------
@@ -852,7 +1122,7 @@ public:
     std::string ToString()
     {
         // 文字列を返却する
-        return this->ToString("%Y/%m/%d %H:%M:%S", this->m_timespec);
+        return this->ToString(this->m_format, this->m_timespec);
     }
 
     //--------------------------------------------------------------------------

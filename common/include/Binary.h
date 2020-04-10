@@ -7,15 +7,13 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include "Exception.h"
+#include "Object.h"
 #include <stdio.h>
-#include <stdint.h>
 #include <sys/types.h>
 #include <string.h>
 
 #include <cstddef>
-#include <string>
-#include <sstream>
-#include <iomanip>
 #include <cstdlib>
 #include <bitset>
 
@@ -27,8 +25,30 @@
 //==============================================================================
 // クラス定義
 //==============================================================================
+//------------------------------------------------------------------------------
+// Binary例外クラス
+//------------------------------------------------------------------------------
+class BinaryException : public Exception
+{
+public:
+    //--------------------------------------------------------------------------
+    // コンストラクタ
+    //--------------------------------------------------------------------------
+    BinaryException(std::string format, ...)
+        : Exception()
+    {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
+    };
+};
+
+//------------------------------------------------------------------------------
 // Binaryクラス
-class Binary {
+//------------------------------------------------------------------------------
+class Binary : public Object {
 private :
     size_t m_size;                          // データ量
     u_char* m_data;                         // データ
@@ -78,7 +98,7 @@ public:
     //-----------------------------------------------------------------------------
     // コンストラクタ
     //-----------------------------------------------------------------------------
-    Binary()
+    Binary() : Object()
     {
         // 初期化
         this->m_size = 0;
@@ -91,7 +111,7 @@ public:
     //-----------------------------------------------------------------------------
     // コンストラクタ
     //-----------------------------------------------------------------------------
-    Binary(const Binary& Binary_data)
+    Binary(const Binary& Binary_data) : Object()
     {
         // 初期化
         this->m_size = 0;
@@ -107,7 +127,7 @@ public:
     //-----------------------------------------------------------------------------
     // コンストラクタ
     //-----------------------------------------------------------------------------
-    Binary(u_char* data, size_t size)
+    Binary(u_char* data, size_t size) : Object()
     {
         // 初期化
         this->m_size = 0;
@@ -129,7 +149,6 @@ public:
         this->Destroy();
     }
 
-
     //-----------------------------------------------------------------------------
     // 設定
     //-----------------------------------------------------------------------------
@@ -147,6 +166,26 @@ public:
 
         // データ設定
         memcpy( this->m_data, data, size );
+        this->m_find_position = this->m_data;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 設定(テンプレート)
+    //-----------------------------------------------------------------------------
+    template <typename T> void Set(T data)
+    {
+        // 解放
+        this->Destroy();
+
+        // サイズ設定
+        this->m_size = sizeof(T);
+        this->m_find_remain_size = sizeof(T);
+
+        // 生成
+        this->Create();
+
+        // データ設定
+        memcpy(this->m_data, &data, sizeof(T));
         this->m_find_position = this->m_data;
     }
 
@@ -187,7 +226,7 @@ public:
     //-----------------------------------------------------------------------------
     // 追加
     //-----------------------------------------------------------------------------
-    void Add(Binary add_data)
+    void Add(Binary& add_data)
     {
         // 追加
         this->Add(add_data.m_data, add_data.m_size);
@@ -232,6 +271,36 @@ public:
     }
 
     //-----------------------------------------------------------------------------
+    // 追加
+    //-----------------------------------------------------------------------------
+    void AddBinstr(std::string binstr)
+    {
+        // 追加用オブジェクト
+        Binary data;
+
+        // 2進数文字列バイナリ変換
+        data.FromBinstr(binstr);
+
+        // 追加
+        this->Add(data);
+    }
+
+    //-----------------------------------------------------------------------------
+    // 追加
+    //-----------------------------------------------------------------------------
+    void AddHexString(std::string hexstr)
+    {
+        // 追加用オブジェクト
+        Binary data;
+
+        // 16進数文字列バイナリ変換
+        data.FromHexstr(hexstr);
+
+        // 追加
+        this->Add(data);
+    }
+
+    //-----------------------------------------------------------------------------
     // クリア
     //-----------------------------------------------------------------------------
     void Clear()
@@ -266,6 +335,11 @@ public:
     //-----------------------------------------------------------------------------
     u_char operator [] (uint32_t index)
     {
+        if(this->m_data == NULL)
+        {
+            // TODO:例外
+        }
+
         // 配列要素を返却
         return this->m_data[index];
     }
@@ -282,8 +356,22 @@ public:
             return false;
         }
 
+        // NULL判定(両方)
+        if(this->m_data == NULL && data.Data() == NULL)
+        {
+            // 一致を返却
+            return true;
+        }
+
+        // NULL判定(片方)
+        if(this->m_data == NULL || data.Data() == NULL)
+        {
+            // 不一致を返却
+            return false;
+        }
+
         // 内容判定
-        if( memcpy( this->m_data, data.Data(), this->m_size) != 0 )
+        if( memcmp( this->m_data, data.Data(), this->m_size) != 0 )
         {
             // 不一致を返却
             return false;
@@ -298,6 +386,20 @@ public:
     //-----------------------------------------------------------------------------
     bool operator != (Binary& data)
     {
+        // NULL判定(両方)
+        if(this->m_data == NULL && data.Data() == NULL)
+        {
+            // 一致を返却
+            return false;
+        }
+
+        // NULL判定(片方)
+        if(this->m_data == NULL || data.Data() == NULL)
+        {
+            // 不一致を返却
+            return true;
+        }
+
         // サイズ判定
         if( this->m_size == data.Size() )
         {
@@ -316,6 +418,110 @@ public:
 
         // 不一致を返却
         return true;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 比較演算子
+    //-----------------------------------------------------------------------------
+    bool operator > (Binary& data)
+    {
+        // サイズ判定
+        if( this->m_size > data.Size() )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+        // 内容判定
+        if( memcpy( this->m_data, data.Data(), this->m_size) > 0 )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    // 比較演算子
+    //-----------------------------------------------------------------------------
+    bool operator >= (Binary& data)
+    {
+        // サイズ判定
+        if( this->m_size >= data.Size() )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+        // 内容判定
+        if( memcpy( this->m_data, data.Data(), this->m_size) >= 0 )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    // 比較演算子
+    //-----------------------------------------------------------------------------
+    bool operator < (Binary& data)
+    {
+        // サイズ判定
+        if( this->m_size < data.Size() )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+        // 内容判定
+        if( memcpy( this->m_data, data.Data(), this->m_size) < 0 )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    // 比較演算子
+    //-----------------------------------------------------------------------------
+    bool operator <= (Binary& data)
+    {
+        // サイズ判定
+        if( this->m_size <= data.Size() )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+        // 内容判定
+        if( memcpy( this->m_data, data.Data(), this->m_size) <= 0 )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     //-----------------------------------------------------------------------------
@@ -603,6 +809,12 @@ public:
     {
         Binary _result;
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return _result;
+        }
+
         // 文字数分繰り返し
         int _count=0;
         for(size_t i=start; i<this->m_size && _count<end; i++, _count++ )
@@ -620,6 +832,12 @@ public:
     std::string ToString()
     {
         char _buffer[this->m_size+1];   // 文字列バッファ
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return "";
+        }
 
         // 初期化
         memset(_buffer, 0x00, sizeof(_buffer));
@@ -642,6 +860,12 @@ public:
         std::stringstream _result;
         unsigned int _data;
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return "";
+        }
+
         // サイズ分繰り返す
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -661,6 +885,12 @@ public:
         std::stringstream _result;
         unsigned int _data;
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return "";
+        }
+
         // サイズ分繰り返す
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -678,6 +908,12 @@ public:
     std::string ToDump()
     {
         std::stringstream _dumpmsg; // ダンプメッセージ
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return "";
+        }
 
         // ログ内容
         const unsigned char* p = (const unsigned char*)(this->m_data);
@@ -721,10 +957,42 @@ public:
     }
 
     //-----------------------------------------------------------------------------
+    // 置換
+    //-----------------------------------------------------------------------------
+    void Replace(Binary& data, size_t offset)
+    {
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return;
+        }
+
+        // サイズ分繰り返す
+        size_t r=0;
+        for(size_t i=offset; i<this->m_size; i++ )
+        {
+            if(r>=data.Size())
+            {
+                break;
+            }
+            this->m_data[i] = data[r++];
+        }
+    }
+
+    //-----------------------------------------------------------------------------
     // 反転
     //-----------------------------------------------------------------------------
     Binary Reverse()
     {
+        Binary _result;
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            // 結果を返却
+            return _result;
+        }
+
         u_char _save_data[this->m_size];  // 保存データ
 
         // 保存データ初期化
@@ -737,7 +1005,6 @@ public:
         }
 
         // 返却データを設定
-        Binary _result;
         _result.Set(_save_data,sizeof(_save_data));
 
         // 結果を返却
@@ -750,6 +1017,12 @@ public:
     int ToInt()
     {
         int _result = 0;                    // 変換結果
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
 
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
@@ -769,6 +1042,12 @@ public:
     {
         uint8_t _result = 0;                // 変換結果
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
+
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -786,6 +1065,12 @@ public:
     uint16_t ToUint16()
     {
         uint16_t _result = 0;               // 変換結果
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
 
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
@@ -805,6 +1090,12 @@ public:
     {
         uint32_t _result = 0;               // 変換結果
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
+
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -822,6 +1113,12 @@ public:
     uint64_t ToUint64()
     {
         uint64_t _result = 0;               // 変換結果
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
 
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
@@ -841,6 +1138,12 @@ public:
     {
         int8_t _result = 0;                 // 変換結果
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
+
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -858,6 +1161,12 @@ public:
     int16_t ToInt16()
     {
         int16_t _result = 0;                // 変換結果
+
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
 
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
@@ -877,6 +1186,12 @@ public:
     {
         int32_t _result = 0;                // 変換結果
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
+
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -895,6 +1210,12 @@ public:
     {
         int64_t _result = 0;                // 変換結果
 
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return 0;
+        }
+
         // 格納サイズ分繰り返し
         for(size_t i=0; i<this->m_size; i++ )
         {
@@ -911,6 +1232,13 @@ public:
     //-----------------------------------------------------------------------------
     bool Comp(Binary target) const
     {
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            // 不一致
+            return false;
+        }
+
         // メモリ比較
         if(memcmp(this->m_data,target.Data(),this->m_size) != 0)
         {

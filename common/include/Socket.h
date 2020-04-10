@@ -29,8 +29,14 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    SocketException(std::string msg) : Exception(msg)
+    SocketException(std::string format, ...)
+        : Exception()
     {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        this->SetMessage(format, ap);
+        va_end(ap);
     };
 };
 
@@ -76,13 +82,13 @@ public :
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    Socket(Socket& socket) : Object(socket)
+    Socket(const Socket& socket) : Object()
     {
         // コピー
         this->m_socket = socket.m_socket;
         this->m_sockaddr = socket.m_sockaddr;
         this->m_sockaddr_length = socket.m_sockaddr_length;
-        this->m_errno = socket.m_errno;;
+        this->m_errno = socket.m_errno;
     }
 
     //--------------------------------------------------------------------------
@@ -425,12 +431,12 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t RecvFrom(void* buffer, size_t size, int flags)
+    size_t RecvFrom(void* buffer, size_t size, int flags, Socket& recvSocket)
     {
         size_t _recvSize = 0;                   // 受信サイズ
 
         // 受信
-        _recvSize = recvfrom(this->m_socket, buffer, size, flags, (struct sockaddr*)&(this->m_sockaddr), &(this->m_sockaddr_length));
+        _recvSize = recvfrom(this->m_socket, buffer, size, flags, (struct sockaddr*)&(recvSocket.m_sockaddr), &(recvSocket.m_sockaddr_length));
 
         // 受信サイズを返却
         return _recvSize;
@@ -448,6 +454,38 @@ public :
 
         // 受信サイズを返却
         return _recvSize;
+    }
+
+    //--------------------------------------------------------------------------
+    // イベント待ち(select)
+    //--------------------------------------------------------------------------
+    bool Select(short& revent, long second)
+    {
+        // 結果を返却
+        return this->Select(revent, second, 0, 0);
+    }
+
+    //--------------------------------------------------------------------------
+    // イベント待ち(select)
+    //--------------------------------------------------------------------------
+    bool Select(short& revent, long second, long msec)
+    {
+        // 結果を返却
+        return this->Select(revent, second, msec, 0);
+    }
+
+    //--------------------------------------------------------------------------
+    // イベント待ち(select)
+    //--------------------------------------------------------------------------
+    bool Select(short& revent, long second, long msec, long usec)
+    {
+        // タイムアウト値を設定
+        struct timeval _timeout;
+        _timeout.tv_sec = second;
+        _timeout.tv_usec = (msec * 1000) + usec;
+
+        // 結果を返却
+        return this->Select(revent, _timeout);
     }
 
     //--------------------------------------------------------------------------
@@ -572,8 +610,14 @@ public :
     {
         std::stringstream _stringstream;    // 文字列化Stream
 
-        // エラー番号を文字列化
-        _stringstream << strerror(this->m_errno);
+        // IPアドレスを文字列化
+        _stringstream << inet_ntoa(this->m_sockaddr.sin_addr);
+
+        // ポート番号を文字列化
+        if(this->m_sockaddr.sin_port != 0)
+        {
+            _stringstream << ":" << ntohs(this->m_sockaddr.sin_port);
+        }
 
         // 文字列を返却
         return _stringstream.str();

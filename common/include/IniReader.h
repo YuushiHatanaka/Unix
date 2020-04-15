@@ -136,6 +136,9 @@ public :
     //--------------------------------------------------------------------------
     virtual ~IniReader()
     {
+        // 連想配列クリア
+        this->Destroy();
+
         // ファイルクローズ
         this->Close();
     }
@@ -215,24 +218,22 @@ public :
             // セッション判定
             if ( _session.empty() )
             {
+                // 例外
                 std::stringstream _error_msg;
-                std::string _throw_msg;
                 _error_msg << "外部定義ファイルフォーマット異常:[";
                 _error_msg << "セッション未定義";
                 _error_msg << "]";
-                _throw_msg = _error_msg.str();
                 throw IniReaderException(_error_msg.str().c_str());
             }
 
             // 空行以外で'='が存在しない場合は、例外(フォーマットエラー)
             if( _readline.find("=") == std::string::npos )
             {
+                // 例外
                 std::stringstream _error_msg;
-                std::string _throw_msg;
-                _error_msg << "外部定義ファイルフォーマット異常:[";
+                _error_msg << "外部定義ファイルフォーマット異常('='記述なし):[";
                 _error_msg << _readline.c_str();
                 _error_msg << "]";
-                _throw_msg = _error_msg.str();
                 throw IniReaderException(_error_msg.str().c_str());
             }
 
@@ -243,6 +244,15 @@ public :
             if( _key_value.size() == 2 )
             {
                 this->Regston( _session, _key_value[0], _key_value[1] );
+            }
+            else
+            {
+                // 例外
+                std::stringstream _error_msg;
+                _error_msg << "外部定義ファイルフォーマット異常(キー、値分割不可):[";
+                _error_msg << _readline.c_str();
+                _error_msg << "]";
+                throw IniReaderException(_error_msg.str().c_str());
             }
         }
     }
@@ -317,6 +327,29 @@ public :
             // キー登録なし
             return std::vector<std::string>();
         }
+    }
+
+    //--------------------------------------------------------------------------
+    // 要素取得
+    //--------------------------------------------------------------------------
+    std::string Item(std::string session, std::string key)
+    {
+        // 要素取得
+        std::vector<std::string> _Items = this->Items(session, key);
+
+        // サイズ判定
+        if(_Items.size() <= 0)
+        {
+            // 例外
+            std::stringstream _error_msg;
+            _error_msg << "Sesstion、Key指定異常:[";
+            _error_msg << "「" << session << "」と「" << key <<"」のデータ定義はありません";
+            _error_msg << "]";
+            throw IniReaderException(_error_msg.str().c_str());
+        }
+
+        // 先頭を返却
+        return _Items[0];
     }
 
     //--------------------------------------------------------------------------

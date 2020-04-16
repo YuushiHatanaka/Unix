@@ -42,6 +42,7 @@ class UnixSocket : public Socket
 protected:
     struct sockaddr_un m_pathaddr;          // PATHアドレス
     socklen_t m_pathaddr_length;            // ソケットアドレスサイズ
+    std::string m_path;                     // ソケットパス
 
 public:
     //--------------------------------------------------------------------------
@@ -50,7 +51,7 @@ public:
     UnixSocket(std::string path) : Socket()
     {
         // PATH設定
-        this->SetAddress(path);
+        this->SetPath(path);
     }
 
     //--------------------------------------------------------------------------
@@ -66,7 +67,7 @@ public:
     UnixSocket(int socket, std::string path) : Socket(socket)
     {
         // PATH設定
-        this->SetAddress(path);
+        this->SetPath(path);
     }
 
     //--------------------------------------------------------------------------
@@ -77,6 +78,7 @@ public:
         // コピー
         this->m_pathaddr = socket.m_pathaddr;
         this->m_pathaddr_length = socket.m_pathaddr_length;
+        this->m_path = socket.m_path;
     }
 
     //--------------------------------------------------------------------------
@@ -98,11 +100,20 @@ public:
     //--------------------------------------------------------------------------
     // PATH設定
     //--------------------------------------------------------------------------
-    void SetAddress(std::string path)
+    void SetPath(std::string path)
     {
         memset(&(this->m_pathaddr), 0x00, sizeof(this->m_pathaddr));
         this->m_pathaddr.sun_family = AF_UNIX;
         strcpy(this->m_pathaddr.sun_path, path.c_str());
+        this->m_path = path;
+    }
+
+    //--------------------------------------------------------------------------
+    // PATH取得
+    //--------------------------------------------------------------------------
+    std::string GetPath()
+    {
+        return this->m_path;
     }
 
     //--------------------------------------------------------------------------

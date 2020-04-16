@@ -377,10 +377,19 @@ public :
     //--------------------------------------------------------------------------
     size_t Send(const void* buffer, size_t size, int flags)
     {
+        // 送信
+        return this->Send(this->m_socket, buffer, size, flags);
+    }
+
+    //--------------------------------------------------------------------------
+    // 送信
+    //--------------------------------------------------------------------------
+    size_t Send(int socket, const void* buffer, size_t size, int flags)
+    {
         size_t _sendSize = 0;                   // 送信サイズ
 
         // 送信
-        _sendSize = send(this->m_socket, buffer, size, flags);
+        _sendSize = send(socket, buffer, size, flags);
 
         // 送信サイズを返却
         return _sendSize;
@@ -419,10 +428,19 @@ public :
     //--------------------------------------------------------------------------
     size_t Recv(void* buffer, size_t size, int flags)
     {
+        // 受信
+        return this->Recv(this->m_socket, buffer, size, flags);
+    }
+
+    //--------------------------------------------------------------------------
+    // 受信
+    //--------------------------------------------------------------------------
+    size_t Recv(int socket, void* buffer, size_t size, int flags)
+    {
         size_t _recvSize = 0;                   // 受信サイズ
 
         // 受信
-        _recvSize = recv(this->m_socket, buffer, size, flags);
+        _recvSize = recv(socket, buffer, size, flags);
 
         // 受信サイズを返却
         return _recvSize;

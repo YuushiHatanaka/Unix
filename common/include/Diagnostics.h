@@ -10,6 +10,7 @@
 #include "Exception.h"
 #include <sys/time.h>
 #include <fstream>
+#include <iomanip>
 
 //==============================================================================
 // 定数定義
@@ -380,6 +381,53 @@ public:
         va_start(ap, format);
         Diagnostics::WriteLine("[Trace]", format.c_str(), ap);
         va_end(ap);
+#endif
+    }
+
+    //-------------------------------------------------------------------------
+    // Trace - Dump
+    //-------------------------------------------------------------------------
+    static void Dump(const char* message, const void *addr, size_t bytes)
+    {
+#if _DEBUG_
+        std::stringstream _logmsg;    // ログメッセージ
+        // ログヘッダ
+        _logmsg << message << " - size:" << std::dec << bytes << " -" << "\n";
+
+        // ログ内容
+        const unsigned char* p = (const unsigned char*)addr;
+        char text[DUMP_STRING_WIDHT+1];
+        unsigned i = 0;
+        unsigned _addrress;
+        unsigned int _data;
+        while (i < bytes)
+        {
+            // アドレス出力
+            if ((i % DUMP_STRING_WIDHT) == 0)
+            {
+                _addrress = (unsigned int)p;
+                _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
+                memset(text, '\0', sizeof(text));
+            }
+            _data = (unsigned int)*p;
+            _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _data << " ";
+            text[i % DUMP_STRING_WIDHT] = isprint(*p) ? *p : '.';
+            p++;
+            i++;
+            // テキスト部分出力
+            if ((i % DUMP_STRING_WIDHT) == 0)
+            {
+                _logmsg << ": " << text << "\n";
+            }
+        }
+        if ((i % DUMP_STRING_WIDHT) != 0)
+        {
+            _logmsg << std::setw((DUMP_STRING_WIDHT - (i % DUMP_STRING_WIDHT)) * 3 + 2) << std::setfill(' ');
+            _logmsg << ": " << text << "\n";
+        }
+
+        // 現在日時文字列取得
+        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Dump] " << _logmsg.str();
 #endif
     }
 };

@@ -398,15 +398,13 @@ public:
         const unsigned char* p = (const unsigned char*)addr;
         char text[DUMP_STRING_WIDHT+1];
         unsigned i = 0;
-        unsigned _addrress;
         unsigned int _data;
         while (i < bytes)
         {
             // アドレス出力
             if ((i % DUMP_STRING_WIDHT) == 0)
             {
-                _addrress = (unsigned int)p;
-                _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
+                _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  p << ": ";
                 memset(text, '\0', sizeof(text));
             }
             _data = (unsigned int)*p;

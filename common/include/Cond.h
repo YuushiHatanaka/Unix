@@ -77,7 +77,7 @@ public:
         if(pthread_cond_signal(&(this->m_cond)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -96,7 +96,7 @@ public:
         if(pthread_cond_broadcast(&(this->m_cond)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -115,7 +115,7 @@ public:
         if(pthread_cond_wait(&(this->m_cond), &(this->m_mutex)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -128,13 +128,28 @@ public:
     //--------------------------------------------------------------------------
     // Timedwait
     //--------------------------------------------------------------------------
+    bool Timedwait(long msec)
+    {
+        struct timespec _msec;
+
+        // ミリ秒変換
+        _msec.tv_sec = msec / 1000;
+        _msec.tv_nsec = (msec % 1000) * 1000;
+
+        // 正常終了
+        return this->Timedwait(&_msec);
+    }
+
+    //--------------------------------------------------------------------------
+    // Timedwait
+    //--------------------------------------------------------------------------
     bool Timedwait(const struct timespec* abstime)
     {
         // wait設定
         if(pthread_cond_timedwait(&(this->m_cond), &(this->m_mutex), abstime) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;

@@ -125,7 +125,7 @@ public:
         if(bind(this->m_socket, (struct sockaddr*)&(this->m_pathaddr), sizeof(this->m_pathaddr)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -147,7 +147,7 @@ public:
         if(_socket < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return _socket;
@@ -166,7 +166,7 @@ public:
         if(connect(this->m_socket, (struct sockaddr*)&(this->m_pathaddr), sizeof(this->m_pathaddr)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -185,7 +185,7 @@ public:
         if(unlink(this->m_pathaddr.sun_path) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;

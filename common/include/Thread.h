@@ -49,7 +49,6 @@ protected:
     std::string m_name;                     // 名称
     pthread_t m_id;                         // ID
     pthread_attr_t m_attr;                  // 属性
-    int m_errno;                            // エラー番号
     sigset_t m_sigmask;                     // SIGNALマスク
     bool m_isSuspend;                       // 中断状態
 
@@ -181,7 +180,6 @@ public:
         this->m_name = "";
         this->m_id = 0;
         pthread_attr_init(&(this->m_attr));
-        this->m_errno = 0;
         this->m_isSuspend = false;
         this->InitSignalHandler();
     }
@@ -195,7 +193,6 @@ public:
         this->m_name = "";
         this->m_id = id;
         pthread_attr_init(&(this->m_attr));
-        this->m_errno = 0;
         this->m_isSuspend = false;
         this->InitSignalHandler();
     }
@@ -209,7 +206,6 @@ public:
         this->m_name = "";
         this->m_id = id;
         this->m_attr = attr;
-        this->m_errno = 0;
         this->m_isSuspend = false;
         this->InitSignalHandler();
     }
@@ -223,7 +219,6 @@ public:
         this->m_name = name;
         this->m_id = 0;
         pthread_attr_init(&(this->m_attr));
-        this->m_errno = 0;
         this->m_isSuspend = false;
         this->InitSignalHandler();
     }
@@ -237,7 +232,6 @@ public:
         this->m_name = name;
         this->m_id = 0;
         this->m_attr = attr;
-        this->m_errno = 0;
         this->m_isSuspend = false;
         this->InitSignalHandler();
     }
@@ -296,7 +290,7 @@ public:
         if(pthread_create(&(this->m_id), &(this->m_attr), Thread::ExecuteLancher, this) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -322,7 +316,7 @@ public:
         if(pthread_cancel(this->m_id) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -348,7 +342,7 @@ public:
         if(pthread_kill(this->m_id,SIGUSR1) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -384,7 +378,7 @@ public:
         if(pthread_kill(this->m_id,SIGUSR2) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -413,7 +407,7 @@ public:
         if(pthread_kill(this->m_id,SIGTERM) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -462,7 +456,7 @@ public:
         if(pthread_join(this->m_id, NULL) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -493,7 +487,7 @@ public:
         if (clock_gettime(CLOCK_REALTIME, &timeInfo) == -1)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -506,7 +500,7 @@ public:
         if(pthread_timedjoin_np(this->m_id, NULL, &timeInfo) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;

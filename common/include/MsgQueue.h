@@ -7,12 +7,12 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include "Object.h"
 #include "Exception.h"
 #include "DateTime.h"
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <errno.h>
 
 #include <iomanip>
 #include <sstream>
@@ -57,12 +57,11 @@ public:
 //------------------------------------------------------------------------------
 // MsgQueueクラス
 //------------------------------------------------------------------------------
-class MsgQueue
+class MsgQueue : public Object
 {
 private:
     key_t m_key;                            // KEY値
     int m_msqid;                            // System V メッセージキュー識別子
-    int m_errno;                            // エラー番号
     ssize_t m_rcvsize;                      // 直近の受信データサイズ
     bool m_destroy;                         // 破棄フラグ
 
@@ -73,12 +72,11 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(int msgflg)
+    MsgQueue(int msgflg) : Object()
     {
         // 初期化
         this->m_key = IPC_PRIVATE;
         this->m_msqid = 0;
-        this->m_errno = 0;
         this->m_rcvsize = 0;
         this->m_destroy = true;
 
@@ -86,19 +84,18 @@ public:
         if(!this->Get(msgflg))
         {
             // 例外
-            throw new MsgQueueException("MsgQueue(int msgflg)", this->m_errno);
+            throw new MsgQueueException("MsgQueue(int msgflg)", this->GetErrno());
         }
     }
 
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(int msgflg, bool destroy)
+    MsgQueue(int msgflg, bool destroy) : Object()
     {
         // 初期化
         this->m_key = IPC_PRIVATE;
         this->m_msqid = 0;
-        this->m_errno = 0;
         this->m_rcvsize = 0;
         this->m_destroy = destroy;
 
@@ -106,19 +103,18 @@ public:
         if(!this->Get(msgflg))
         {
             // 例外
-            throw new MsgQueueException("MsgQueue(bool destroy, int msgflg)", this->m_errno);
+            throw new MsgQueueException("MsgQueue(bool destroy, int msgflg)", this->GetErrno());
         }
     }
 
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(key_t key, int msgflg)
+    MsgQueue(key_t key, int msgflg) : Object()
     {
         // 初期化
         this->m_key = key;
         this->m_msqid = 0;
-        this->m_errno = 0;
         this->m_rcvsize = 0;
         this->m_destroy = true;
 
@@ -126,19 +122,18 @@ public:
         if(!this->Get(msgflg))
         {
             // 例外
-            throw new MsgQueueException("MsgQueue(int msgflg, key_t key)", this->m_errno);
+            throw new MsgQueueException("MsgQueue(int msgflg, key_t key)", this->GetErrno());
         }
     }
 
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(key_t key, int msgflg, bool destroy)
+    MsgQueue(key_t key, int msgflg, bool destroy) : Object()
     {
         // 初期化
         this->m_key = key;
         this->m_msqid = 0;
-        this->m_errno = 0;
         this->m_rcvsize = 0;
         this->m_destroy = destroy;
 
@@ -146,14 +141,14 @@ public:
         if(!this->Get(msgflg))
         {
             // 例外
-            throw new MsgQueueException("MsgQueue(key_t key, int msgflg, bool destroy)", this->m_errno);
+            throw new MsgQueueException("MsgQueue(key_t key, int msgflg, bool destroy)", this->GetErrno());
         }
     }
 
     //--------------------------------------------------------------------------
     // コピーコンストラクタ
     //--------------------------------------------------------------------------
-    MsgQueue(MsgQueue& queue)
+    MsgQueue(MsgQueue& queue) : Object()
     {
         // コピー
         this->m_key = queue.m_key;
@@ -182,7 +177,7 @@ public:
     bool Key(std::string pathname, int proj_id)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // キー生成
         this->m_key = ftok(pathname.c_str(), proj_id);
@@ -191,7 +186,7 @@ public:
         if(this->m_key < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -207,7 +202,7 @@ public:
     bool Get(int msgflg)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージキュー識別子を取得
         this->m_msqid = msgget(this->m_key, msgflg);
@@ -216,7 +211,7 @@ public:
         if(this->m_msqid < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -232,7 +227,7 @@ public:
     bool CtrlStat(struct msqid_ds& buf)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージ制御
         int _result = msgctl(this->m_msqid, IPC_STAT, &buf);
@@ -241,7 +236,7 @@ public:
         if(_result < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -257,7 +252,7 @@ public:
     bool CtrlSet(struct msqid_ds*& buf)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージ制御
         int _result = msgctl(this->m_msqid, IPC_SET, buf);
@@ -266,7 +261,7 @@ public:
         if(_result < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -291,7 +286,7 @@ public:
     bool CtrlRmid(int msqid)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージ制御
         int _result = msgctl(msqid, IPC_RMID, NULL);
@@ -300,7 +295,7 @@ public:
         if(_result < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -316,7 +311,7 @@ public:
     bool Send(const void* msgp, size_t msgsz, int msgflg)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージ送信
         int _result = msgsnd(this->m_msqid, msgp, msgsz, msgflg);
@@ -325,7 +320,7 @@ public:
         if(_result < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -341,7 +336,7 @@ public:
     bool Recv(void*& msgp, size_t msgsz,  long msgtyp, int msgflg, ssize_t& rcvsize)
     {
         // エラー初期化
-        this->m_errno = 0;
+        this->ResetErrno();
 
         // メッセージ受信
         this->m_rcvsize = msgrcv(this->m_msqid, msgp, msgsz, msgtyp, msgflg);
@@ -353,7 +348,7 @@ public:
         if(this->m_rcvsize < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -372,10 +367,10 @@ public:
         std::stringstream _sstream;         // 文字列化Stream
 
         // エラーがあった場合はエラー番号を返却
-        if(this->m_errno != 0)
+        if(this->GetErrno() != 0)
         {
             // エラー番号を文字列化
-            _sstream << strerror(this->m_errno);
+            _sstream << Object::ToErrMsg();
 
             // 文字列を返却
             return _sstream.str();

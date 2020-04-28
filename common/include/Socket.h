@@ -10,7 +10,6 @@
 #include "Object.h"
 #include "Exception.h"
 #include <unistd.h>
-#include <errno.h>
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -49,7 +48,6 @@ protected :
     int m_socket;                           // ソケット
     struct sockaddr_in m_sockaddr;          // ソケットアドレス
     socklen_t m_sockaddr_length;            // ソケットアドレスサイズ
-    int m_errno;                            // エラー番号
 
 public :
     int GetSocket() { return this->m_socket; }
@@ -64,7 +62,6 @@ public :
         this->m_socket = -1;
         this->m_sockaddr_length = sizeof(this->m_sockaddr);
         memset(&(this->m_sockaddr), 0x0, this->m_sockaddr_length);
-        this->m_errno = 0;
     }
 
     //--------------------------------------------------------------------------
@@ -76,7 +73,6 @@ public :
         this->m_socket = socket;
         this->m_sockaddr_length = sizeof(this->m_sockaddr);
         memset(&(this->m_sockaddr), 0x0, this->m_sockaddr_length);
-        this->m_errno = 0;
     }
 
     //--------------------------------------------------------------------------
@@ -112,7 +108,7 @@ public :
         if(this->m_socket < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -149,7 +145,7 @@ public :
         if(getsockopt(this->m_socket, level, optname, optval, optlen) < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -168,7 +164,7 @@ public :
         if(setsockopt(this->m_socket, level, optname, optval, optlen) < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -198,7 +194,7 @@ public :
         if(bind(this->m_socket, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -217,7 +213,7 @@ public :
         if(listen(this->m_socket, backlog) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -239,7 +235,7 @@ public :
         if(_socket < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return _socket;
@@ -258,7 +254,7 @@ public :
         if(connect(this->m_socket, (struct sockaddr *)&(this->m_sockaddr), sizeof(this->m_sockaddr)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -284,7 +280,7 @@ public :
         if(close(this->m_socket) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -313,7 +309,7 @@ public :
         if(shutdown(this->m_socket, how) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -340,10 +336,17 @@ public :
     //--------------------------------------------------------------------------
     size_t Read(int socket, char* buffer, size_t size)
     {
-        size_t _readSize = 0;                   // 読込サイズ
+        size_t _readSize = 0;               // 読込サイズ
 
         // 読込
         _readSize = read(socket, buffer, size);
+
+        // 結果判定
+        if(_readSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 読込サイズを返却
         return _readSize;
@@ -355,7 +358,7 @@ public :
     size_t Write(char* buffer, size_t size)
     {
         // 書込サイズを返却
-        return this->Write(this->m_socket, buffer, size);
+        return  this->Write(this->m_socket, buffer, size);
     }
 
     //--------------------------------------------------------------------------
@@ -367,6 +370,13 @@ public :
 
         // 書込
         _writeSize = write(socket, buffer, size);
+
+        // 結果判定
+        if(_writeSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 書込サイズを返却
         return _writeSize;
@@ -391,6 +401,13 @@ public :
         // 送信
         _sendSize = send(socket, buffer, size, flags);
 
+        // 結果判定
+        if(_sendSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
+
         // 送信サイズを返却
         return _sendSize;
     }
@@ -400,10 +417,26 @@ public :
     //--------------------------------------------------------------------------
     size_t SendTo(const void* buffer, size_t size, int flags)
     {
+        // 送信サイズを返却
+        return this->SendTo(this->m_socket, buffer, size, flags);
+    }
+
+    //--------------------------------------------------------------------------
+    // 送信
+    //--------------------------------------------------------------------------
+    size_t SendTo(int socket, const void* buffer, size_t size, int flags)
+    {
         size_t _sendSize = 0;                   // 送信サイズ
 
         // 送信
-        _sendSize = sendto(this->m_socket, buffer, size, flags, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr));
+        _sendSize = sendto(socket, buffer, size, flags, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr));
+
+        // 結果判定
+        if(_sendSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 送信サイズを返却
         return _sendSize;
@@ -414,10 +447,26 @@ public :
     //--------------------------------------------------------------------------
     size_t SendMsg(const struct msghdr* message, int flags)
     {
+        // 送信サイズを返却
+        return this->SendMsg(this->m_socket, message, flags);
+    }
+
+    //--------------------------------------------------------------------------
+    // 送信
+    //--------------------------------------------------------------------------
+    size_t SendMsg(int socket, const struct msghdr* message, int flags)
+    {
         size_t _sendSize = 0;                   // 送信サイズ
 
         // 送信
-        _sendSize = sendmsg(this->m_socket, message, flags);
+        _sendSize = sendmsg(socket, message, flags);
+
+        // 結果判定
+        if(_sendSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 送信サイズを返却
         return _sendSize;
@@ -428,7 +477,7 @@ public :
     //--------------------------------------------------------------------------
     size_t Recv(void* buffer, size_t size, int flags)
     {
-        // 受信
+         // 受信サイズを返却
         return this->Recv(this->m_socket, buffer, size, flags);
     }
 
@@ -442,6 +491,13 @@ public :
         // 受信
         _recvSize = recv(socket, buffer, size, flags);
 
+        // 結果判定
+        if(_recvSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
+
         // 受信サイズを返却
         return _recvSize;
     }
@@ -451,10 +507,26 @@ public :
     //--------------------------------------------------------------------------
     size_t RecvFrom(void* buffer, size_t size, int flags, Socket& recvSocket)
     {
+        // 受信サイズを返却
+        return this->RecvFrom(this->m_socket, buffer, size, flags, recvSocket);
+    }
+
+    //--------------------------------------------------------------------------
+    // 受信
+    //--------------------------------------------------------------------------
+    size_t RecvFrom(int socket, void* buffer, size_t size, int flags, Socket& recvSocket)
+    {
         size_t _recvSize = 0;                   // 受信サイズ
 
         // 受信
-        _recvSize = recvfrom(this->m_socket, buffer, size, flags, (struct sockaddr*)&(recvSocket.m_sockaddr), &(recvSocket.m_sockaddr_length));
+        _recvSize = recvfrom(socket, buffer, size, flags, (struct sockaddr*)&(recvSocket.m_sockaddr), &(recvSocket.m_sockaddr_length));
+
+        // 結果判定
+        if(_recvSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 受信サイズを返却
         return _recvSize;
@@ -465,10 +537,26 @@ public :
     //--------------------------------------------------------------------------
     size_t RecvMsg(struct msghdr* message, int flags)
     {
+        // 受信サイズを返却
+        return this->RecvMsg(this->m_socket, message, flags);;
+    }
+
+    //--------------------------------------------------------------------------
+    // 受信
+    //--------------------------------------------------------------------------
+    size_t RecvMsg(int socket, struct msghdr* message, int flags)
+    {
         size_t _recvSize = 0;                   // 受信サイズ
 
         // 受信
         _recvSize = recvmsg(this->m_socket, message, flags);
+
+        // 結果判定
+        if(_recvSize < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+        }
 
         // 受信サイズを返却
         return _recvSize;
@@ -540,7 +628,7 @@ public :
             revent = POLLERR;
 
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -604,7 +692,7 @@ public :
         if( _result < 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;

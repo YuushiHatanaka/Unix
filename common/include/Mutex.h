@@ -7,10 +7,9 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
-#include "Exception.h"
 #include "Object.h"
+#include "Exception.h"
 #include <pthread.h>
-#include <errno.h>
 
 //==============================================================================
 // クラス定義
@@ -42,7 +41,6 @@ class Mutex : public Object
 {
 protected:
     pthread_mutex_t m_mutex;                // mutexオブジェクト
-    int m_errno;                            // エラー番号
 
 public:
     //--------------------------------------------------------------------------
@@ -52,13 +50,12 @@ public:
     {
         // 初期化
         pthread_mutex_init(&(this->m_mutex), NULL);
-        this->m_errno = 0;
     }
 
     //--------------------------------------------------------------------------
     // コピーコンストラクタ
     //--------------------------------------------------------------------------
-    Mutex(const Mutex& mutex)
+    Mutex(const Mutex& mutex) : Object()
     {
         // コピー
         this->m_mutex = mutex.m_mutex;
@@ -83,7 +80,7 @@ public:
         if(pthread_mutex_lock(&(this->m_mutex)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;
@@ -102,7 +99,7 @@ public:
         if(pthread_mutex_trylock(&(this->m_mutex)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // ロック中
             return false;
@@ -121,7 +118,7 @@ public:
         if(pthread_mutex_unlock(&(this->m_mutex)) != 0)
         {
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 異常終了
             return false;

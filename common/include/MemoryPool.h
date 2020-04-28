@@ -7,13 +7,13 @@
 //==============================================================================
 // インクルードファイル
 //==============================================================================
+#include "Object.h"
 #include "Exception.h"
 #include "Mutex.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-#include <errno.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -88,7 +88,7 @@ public:
 //------------------------------------------------------------------------------
 // MemoryPoolクラス
 //------------------------------------------------------------------------------
-class MemoryPool
+class MemoryPool : public Object
 {
 private:
     Mutex m_mutex;                          // 排他制御クラス
@@ -100,7 +100,6 @@ private:
     std::map<MemoryPoolId,std::vector<void*>*> m_usedtable;
                                             // 確保テーブル
     std::map<MemoryPoolId,std::vector<void*>*> m_alloctable;
-    int m_errno;                            // エラー番号
 
     //--------------------------------------------------------------------------
     // IDリスト初期化
@@ -310,11 +309,10 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPool()
+    MemoryPool() : Object()
     {
         // 初期設定
         this->m_currentSize = 0;
-        this->m_errno = 0;
 
         // 初期化
         this->Initialization();
@@ -323,11 +321,10 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPool(uint64_t capacity)
+    MemoryPool(uint64_t capacity) : Object()
     {
         // 初期設定
         this->m_currentSize = 0;
-        this->m_errno = 0;
 
         // 初期化
         this->Initialization(capacity);
@@ -336,11 +333,10 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPool(std::map<MemoryPoolId,uint64_t> capacity)
+    MemoryPool(std::map<MemoryPoolId,uint64_t> capacity) : Object()
     {
         // 初期設定
         this->m_currentSize = 0;
-        this->m_errno = 0;
 
         // 初期化
         this->Initialization();
@@ -503,10 +499,10 @@ public:
             this->m_mutex.Unlock();
 
             // エラー番号設定
-            this->m_errno = errno;
+            this->SetErrno();
 
             // 例外
-            throw new MemoryPoolException(this->m_errno);
+            throw new MemoryPoolException(this->GetErrno());
         }
 
         // ヘッダ設定
@@ -691,10 +687,10 @@ public:
             if( _alloc == NULL )
             {
                 // エラー番号設定
-                this->m_errno = errno;
+                this->SetErrno();
 
                 // 例外
-                throw new MemoryPoolException(this->m_errno);
+                throw new MemoryPoolException(this->GetErrno());
             }
 
             // ヘッダ設定

@@ -9,7 +9,7 @@
 //==============================================================================
 #include "Exception.h"
 #include "File.h"
-#include "StringCtrl.h"
+#include "String.h"
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
@@ -56,8 +56,6 @@ private :
     //-----------------------------------------------------------------------------
     bool Read(std::string& readline)
     {
-        StringCtrl _string;                 // 文字列操作オブジェクト
-
         // ファイルを1行ずつ読み込む
         while(getline(this->m_stream, readline))
         {
@@ -71,7 +69,8 @@ private :
             }
 
             // 改行削除
-            readline = _string.DeleteCrlf(readline);
+            String _string(readline);
+            readline = _string.DeleteCrlf();
 
             // 読込成功
             return true;
@@ -79,6 +78,59 @@ private :
 
         // 読込終了
         return false;
+    }
+
+    //-----------------------------------------------------------------------------
+    // カラム取得
+    //-----------------------------------------------------------------------------
+    std::vector<std::string> GetColumn(std::string line)
+    {
+        std::vector<std::string> _columns;  // カラム一覧
+        std::string _column;                // カラム
+        bool _continue;                     // 継続フラグ
+        String _string;                     // 文字列オブジェクト
+
+        // 初期化
+        _column = "";
+        _continue = false;
+
+        // 1文字づつ処理する
+        for(size_t i=0;i<line.size();i++)
+        {
+            if( line[i] == this->m_field_separator )
+            {
+                if( !_continue )
+                {
+                    _string = _column;
+                    _string = _string.Trim();
+                    _string = _string.Trim("\"");
+                    _columns.push_back(_string.str());
+                    _column = "";
+                }
+                else
+                {
+                    _column += line[i];
+                }
+            }
+            else if( line[i] == '"' )
+            {
+                _continue = !_continue;
+                _column += line[i];
+            }
+            else
+            {
+                _column += line[i];
+            }
+        }
+
+        // 最終カラムを追加
+        _string = _column;
+        _string = _string.Trim();
+        _string = _string.Trim("\"");
+        _columns.push_back(_string.str());
+
+        // カラム返却
+        return _columns;
     }
 
 protected :
@@ -89,6 +141,7 @@ protected :
 public :
     // アクセスメソッド
     uint32_t Count() { return this->m_count; }
+    bool Eof() { return this->m_stream.eof(); }
 
 public:
     //-----------------------------------------------------------------------------
@@ -165,56 +218,9 @@ public:
     }
 
     //-----------------------------------------------------------------------------
-    // カラム取得
-    //-----------------------------------------------------------------------------
-    std::vector<std::string> GetColumn(std::string line)
-    {
-        std::vector<std::string> _columns;  // カラム一覧
-        std::string _column;                // カラム
-        bool _continue;                     // 継続フラグ
-        StringCtrl _string;                 // 文字列操作オブジェクト
-
-        // 初期化
-        _column = "";
-        _continue = false;
-
-        // 1文字づつ処理する
-        for(size_t i=0;i<line.size();i++)
-        {
-            if( line[i] == this->m_field_separator )
-            {
-                if( !_continue )
-                {
-                    _columns.push_back(_string.Trim(_string.Trim(_column),"\""));
-                    _column = "";
-                }
-                else
-                {
-                    _column += line[i];
-                }
-            }
-            else if( line[i] == '"' )
-            {
-                _continue = !_continue;
-                _column += line[i];
-            }
-            else
-            {
-                _column += line[i];
-            }
-        }
-
-        // 最終カラムを追加
-        _columns.push_back(_string.Trim(_string.Trim(_column),"\""));
-
-        // カラム返却
-        return _columns;
-    }
-
-    //-----------------------------------------------------------------------------
     // 読込
     //-----------------------------------------------------------------------------
-    bool Read(std::vector<std::string>& items)
+    std::vector<std::string> Read()
     {
         std::string _readline;              // 読込行
 
@@ -222,14 +228,11 @@ public:
         if(!this->Read(_readline))
         {
             // 読込失敗
-            return false;
+            return std::vector<std::string>();
         }
 
-        // カラム分割
-        items = this->GetColumn(_readline);
-
-        // 読込成功
-        return true;
+        // 結果返却
+        return this->GetColumn(_readline);
     }
 };
 #endif                                      // 二重インクルード防止

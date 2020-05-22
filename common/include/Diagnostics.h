@@ -46,6 +46,12 @@ public:
 //------------------------------------------------------------------------------
 class Diagnostics
 {
+private:
+    //--------------------------------------------------------------------------
+    // 排他制御用オブジェクト
+    //--------------------------------------------------------------------------
+    static pthread_mutex_t m_mutex;
+
 public:
     //--------------------------------------------------------------------------
     // 出力用Stream
@@ -64,8 +70,17 @@ public:
     static void Open(std::string logName)
     {
 #if _DEBUG_
+        // 初期化
+        pthread_mutex_init(&(Diagnostics::m_mutex), NULL);
+
+        // 排他設定
+        Diagnostics::Lock();
+
         // open
         Diagnostics::DiagnosticsStream.open(logName);
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // エラー発生か？
         if(Diagnostics::DiagnosticsStream.fail())
@@ -83,11 +98,17 @@ public:
     static void Close()
     {
 #if _DEBUG_
+        // 排他設定
+        Diagnostics::Lock();
+
         // Flush
         Diagnostics::DiagnosticsStream.flush();
 
         // Close
         Diagnostics::DiagnosticsStream.close();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -108,13 +129,53 @@ public:
     static void Flush(bool autoFlush)
     {
 #if _DEBUG_
-        // Flush
+        // 自動Flush判定
         if(autoFlush)
         {
+            // 排他設定
+            Diagnostics::Lock();
+
+            // Flush
             Diagnostics::DiagnosticsStream.flush();
+
+            // 排他解除
+            Diagnostics::Unlock();
         }
 #endif
     }
+
+    //--------------------------------------------------------------------------
+    // 排他設定
+    //--------------------------------------------------------------------------
+    static bool Lock()
+    {
+        // mutex設定
+        if(pthread_mutex_lock(&(Diagnostics::m_mutex)) != 0)
+        {
+            // 異常終了
+            return false;
+        }
+
+        // 正常終了
+        return true;
+    }
+
+    //--------------------------------------------------------------------------
+    // 排他解除
+    //--------------------------------------------------------------------------
+    static bool Unlock()
+    {
+        // mutex解除
+        if(pthread_mutex_unlock(&(Diagnostics::m_mutex)) != 0)
+        {
+            // 異常終了
+            return false;
+        }
+
+        // 正常終了
+        return true;
+    }
+
 #if _DEBUG_
     //-------------------------------------------------------------------------
     // 現在日時文字列取得
@@ -150,6 +211,9 @@ public:
     //--------------------------------------------------------------------------
     static void Write(const char* tag, const char* format, va_list arg)
     {
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
 
@@ -164,6 +228,9 @@ public:
         // バッファ書込み
         Diagnostics::DiagnosticsStream << _buffer;
 
+        // 排他解除
+        Diagnostics::Unlock();
+
         // バッファフラッシュ
         Diagnostics::Flush();
     }
@@ -173,6 +240,9 @@ public:
     //--------------------------------------------------------------------------
     static void WriteLine(const char* tag, const char* format, va_list arg)
     {
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
 
@@ -186,6 +256,9 @@ public:
 
         // バッファ書込み
         Diagnostics::DiagnosticsStream << _buffer << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -212,8 +285,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert]" << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -232,8 +311,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert] " << message << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -252,8 +337,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert] " << message << "\n" << detailMessage << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -426,8 +517,14 @@ public:
             _logmsg << ": " << text << "\n";
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Dump] " << _logmsg.str();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
 };
@@ -451,8 +548,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert]" << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -471,8 +574,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert] " << message << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -491,8 +600,14 @@ public:
             return;
         }
 
+        // 排他設定
+        Diagnostics::Lock();
+
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert] " << message << "\n" << detailMessage << "\n";
+
+        // 排他解除
+        Diagnostics::Unlock();
 
         // バッファフラッシュ
         Diagnostics::Flush();
@@ -601,4 +716,5 @@ public:
 //------------------------------------------------------------------------------
 bool Diagnostics::AutoFlush = false;
 std::ofstream Diagnostics::DiagnosticsStream;
+pthread_mutex_t Diagnostics::m_mutex;
 #endif                                      // 二重インクルード防止

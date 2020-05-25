@@ -357,9 +357,9 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    // コピーコンストラクタ
+    // コンストラクタ
     //--------------------------------------------------------------------------
-    MemoryPool(MemoryPool& memoryBlock)
+    MemoryPool(const MemoryPool& memoryBlock) : Object(memoryBlock)
     {
         // コピー
         this->m_currentSize = memoryBlock.m_currentSize;

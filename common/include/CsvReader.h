@@ -173,9 +173,9 @@ public:
     }
 
     //-----------------------------------------------------------------------------
-    // コピーコンストラクタ
+    // コンストラクタ
     //-----------------------------------------------------------------------------
-    CsvReader(CsvReader& reader) : File(reader.m_name)
+    CsvReader(const CsvReader& reader) : File(reader.m_name)
     {
         // 初期化
         this->m_field_separator = reader.m_field_separator;

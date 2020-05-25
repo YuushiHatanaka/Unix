@@ -49,9 +49,9 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    // コピーコンストラクタ
+    // コンストラクタ
     //--------------------------------------------------------------------------
-    RegularExpression(RegularExpression& regex)
+    RegularExpression(const RegularExpression& regex)
     {
     }
 

@@ -57,7 +57,7 @@ public:
     //-------------------------------------------------------------------------
     // コンストラクタ
     //-------------------------------------------------------------------------
-    SQLite3(const SQLite3& obj) : Object()
+    SQLite3(const SQLite3& obj) : Object(obj)
     {
         // コピー
         this->m_connection = obj.m_connection;

@@ -280,9 +280,9 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    // コピーコンストラクタ
+    // コンストラクタ
     //--------------------------------------------------------------------------
-    DateTime(const DateTime& datetime) : Object()
+    DateTime(const DateTime& datetime) : Object(datetime)
     {
         // コピー
         this->Copy(datetime);

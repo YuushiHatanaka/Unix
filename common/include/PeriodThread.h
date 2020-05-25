@@ -115,9 +115,9 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    // コピーコンストラクタ
+    // コンストラクタ
     //--------------------------------------------------------------------------
-    PeriodThread(PeriodThread& thread) : Thread(thread)
+    PeriodThread(const PeriodThread& thread) : Thread(thread)
     {
         // 初期設定
         this->m_periodTimer = thread.m_periodTimer;

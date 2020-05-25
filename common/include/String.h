@@ -114,8 +114,12 @@ public :
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    String(const String& value) : Object()
+    String(const String& value) : Object(value)
     {
+        // クリア
+        this->clear();
+
+        // コピー
         this->m_Data << value.m_Data.str();
     }
 

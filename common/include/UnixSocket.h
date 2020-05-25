@@ -73,7 +73,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    UnixSocket(UnixSocket& socket) : Socket(socket)
+    UnixSocket(const UnixSocket& socket) : Socket(socket)
     {
         // コピー
         this->m_pathaddr = socket.m_pathaddr;

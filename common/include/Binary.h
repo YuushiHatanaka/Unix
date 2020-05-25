@@ -111,7 +111,7 @@ public:
     //-----------------------------------------------------------------------------
     // コンストラクタ
     //-----------------------------------------------------------------------------
-    Binary(const Binary& Binary_data) : Object()
+    Binary(const Binary& binary) : Object(binary)
     {
         // 初期化
         this->m_size = 0;
@@ -121,7 +121,7 @@ public:
         this->m_find_remain_size = 0;
 
         // 設定
-        this->Set( Binary_data.m_data, Binary_data.m_size );
+        this->Set( binary.m_data, binary.m_size );
     }
 
     //-----------------------------------------------------------------------------

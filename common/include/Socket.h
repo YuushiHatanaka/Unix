@@ -78,7 +78,7 @@ public :
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    Socket(const Socket& socket) : Object()
+    Socket(const Socket& socket) : Object(socket)
     {
         // コピー
         this->m_socket = socket.m_socket;

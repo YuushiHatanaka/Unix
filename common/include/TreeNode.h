@@ -210,10 +210,22 @@ public:
     TreeNode(T& value)
     {
         // 初期設定
-        TreeNode::m_Parent = NULL;
-        TreeNode::m_PrevNode = NULL;
-        TreeNode::m_NextNode = NULL;
-        TreeNode::m_Value = value;
+        this->m_Parent = NULL;
+        this->m_PrevNode = NULL;
+        this->m_NextNode = NULL;
+        this->m_Value = value;
+    }
+
+    //--------------------------------------------------------------------------
+    // コンストラクタ
+    //--------------------------------------------------------------------------
+    TreeNode(const TreeNode& node)
+    {
+        // 初期設定
+        this->m_Parent = node.m_Parent;
+        this->m_PrevNode = node.m_PrevNode;
+        this->m_NextNode = node.m_NextNode;
+        this->m_Value = node.m_Value;
     }
 
     //--------------------------------------------------------------------------

@@ -16,6 +16,11 @@
 #include <iomanip>
 
 //==============================================================================
+// 定数定義
+//==============================================================================
+#define DUMP_STRING_WIDHT (16)              // ダンプ文字列長
+
+//==============================================================================
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -25,6 +30,61 @@ class Object
 {
 protected:
     int m_errno;                            // エラー番号
+
+protected:
+    //-----------------------------------------------------------------------------
+    // ダンプ文字列取得
+    //-----------------------------------------------------------------------------
+    virtual std::string ToDump(u_char* data, size_t size)
+    {
+        std::stringstream _dumpmsg; // ダンプメッセージ
+
+        // NULL判定
+        if(data == NULL)
+        {
+            return "";
+        }
+
+        // ログ内容
+        const unsigned char* p = (const unsigned char*)(data);
+        size_t bytes = size;
+        char text[DUMP_STRING_WIDHT+1];
+        unsigned i = 0;
+        unsigned _addrress;
+        unsigned int _data;
+
+        while (i < bytes)
+        {
+            // アドレス出力
+            if ((i % DUMP_STRING_WIDHT) == 0)
+            {
+                _addrress = (uintptr_t)p;
+                _dumpmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
+                memset(text, '\0', sizeof(text));
+            }
+            _data = (unsigned int)*p;
+            _dumpmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _data << " ";
+
+            // テキスト部分出力
+            text[i % DUMP_STRING_WIDHT] = isprint(*p) ? *p : '.';
+            p++;
+            i++;
+
+            // テキスト部分出力
+            if ((i % DUMP_STRING_WIDHT) == 0)
+            {
+                _dumpmsg << ": " << text << std::endl;
+            }
+        }
+        if ((i % DUMP_STRING_WIDHT) != 0)
+        {
+            _dumpmsg << std::setw((DUMP_STRING_WIDHT - (i % DUMP_STRING_WIDHT)) * 3 + 2) << std::setfill(' ');
+            _dumpmsg << ": " << text;
+        }
+
+        // 文字列返却
+        return _dumpmsg.str();
+    }
 
 public:
     //--------------------------------------------------------------------------

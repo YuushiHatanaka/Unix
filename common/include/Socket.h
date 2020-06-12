@@ -728,12 +728,8 @@ public :
     //--------------------------------------------------------------------------
     uint16_t ToPort()
     {
-        // ポート番号を文字列化
-        if(this->m_sockaddr.sin_port != 0)
-        {
-            return ntohs(this->m_sockaddr.sin_port);
-        }
-        return 0;
+        // ポート番号を返却
+       return ntohs(this->m_sockaddr.sin_port);
     }
 
     //--------------------------------------------------------------------------
@@ -744,12 +740,12 @@ public :
         std::stringstream _stringstream;    // 文字列化Stream
 
         // IPアドレスを文字列化
-        _stringstream << inet_ntoa(this->m_sockaddr.sin_addr);
+        _stringstream << this->ToAddress();
 
         // ポート番号を文字列化
         if(this->m_sockaddr.sin_port != 0)
         {
-            _stringstream << ":" << ntohs(this->m_sockaddr.sin_port);
+            _stringstream << ":" << this->ToPort();
         }
 
         // 文字列を返却

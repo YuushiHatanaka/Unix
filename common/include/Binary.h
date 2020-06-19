@@ -167,7 +167,8 @@ public:
     //-----------------------------------------------------------------------------
     // 設定(テンプレート)
     //-----------------------------------------------------------------------------
-    template <typename T> void Set(T data)
+    template <typename T>
+    void Set(T data)
     {
         // 解放
         this->Destroy();
@@ -223,17 +224,26 @@ public:
     }
 
     //-----------------------------------------------------------------------------
-    // 追加
+    // 取得
     //-----------------------------------------------------------------------------
-    void Add(uint16_t add_data)
+    template <typename T>
+    void Get(T& value)
     {
-        u_char _add_data[sizeof(uint16_t)]; // 追加データ
+        // 初期化
+        value = 0;
 
-        // 追加データ設定
-        memcpy(_add_data, &add_data, sizeof(_add_data));
+        // NULL判定
+        if(this->m_data == NULL)
+        {
+            return;
+        }
 
-        // 追加
-        this->Add(_add_data, sizeof(_add_data));
+        // 格納サイズ分繰り返し
+        for(size_t i=0; i<this->m_size; i++ )
+        {
+            value = value << 8;
+            value = value | this->m_data[i];
+        }
     }
 
     //-----------------------------------------------------------------------------
@@ -248,15 +258,16 @@ public:
     //-----------------------------------------------------------------------------
     // 追加
     //-----------------------------------------------------------------------------
-    void Add(u_char data)
+    template <typename T>
+    void Add(T data)
     {
-        u_char _add_data[sizeof(u_char)];  // 追加データ
+        u_char _data[sizeof(T)];            // 保存データ
 
         // 追加データ設定
-        _add_data[0] = data;
+        memcpy(_data, &data, sizeof(data));
 
         // 追加
-        this->Add(_add_data, sizeof(_add_data));
+        this->Add(_data, sizeof(_data));
     }
 
     //-----------------------------------------------------------------------------
@@ -945,7 +956,16 @@ public:
     std::string ToDump()
     {
         // ダンプ文字列返却
-        return Object::ToDump(this->m_data, this->m_size);
+        return this->ToDump(0);
+    }
+
+    //-----------------------------------------------------------------------------
+    // ダンプ文字列取得
+    //-----------------------------------------------------------------------------
+    std::string ToDump(int indent)
+    {
+        // ダンプ文字列返却
+        return Object::ToDump(this->m_data, this->m_size, indent);
     }
 
     //-----------------------------------------------------------------------------
@@ -990,50 +1010,19 @@ public:
     }
 
     //-----------------------------------------------------------------------------
-    // エンディアン変換(uin16_t)
+    // エンディアン変換
     //-----------------------------------------------------------------------------
-    Binary SwapUint16()
+    template<typename T>
+    Binary Swap()
     {
-        u_char convert[2];
+        u_char convert[sizeof(T)];
         u_char* p = this->m_data;
-        convert[1] = *p++;
-        convert[0] = *p++;
+        for(int64_t i=sizeof(T)-1; i>=0; i--)
+        {
+            convert[i] = *p++;
+        }
 
-        return Binary(convert, 2);
-    }
-
-    //-----------------------------------------------------------------------------
-    // エンディアン変換(uin32_t)
-    //-----------------------------------------------------------------------------
-    Binary SwapUint32()
-    {
-        u_char convert[4];
-        u_char* p = this->m_data;
-        convert[3] = *p++;
-        convert[2] = *p++;
-        convert[1] = *p++;
-        convert[0] = *p++;
-
-        return Binary(convert, 4);
-    }
-
-    //-----------------------------------------------------------------------------
-    // エンディアン変換(uin64_t)
-    //-----------------------------------------------------------------------------
-    Binary SwapUint64()
-    {
-        u_char convert[8];
-        u_char* p = this->m_data;
-        convert[7] = *p++;
-        convert[6] = *p++;
-        convert[5] = *p++;
-        convert[4] = *p++;
-        convert[3] = *p++;
-        convert[2] = *p++;
-        convert[1] = *p++;
-        convert[0] = *p++;
-
-        return Binary(convert, 8);
+        return Binary(convert, sizeof(T));
     }
 
     //-----------------------------------------------------------------------------

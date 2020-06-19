@@ -35,7 +35,7 @@ protected:
     //-----------------------------------------------------------------------------
     // ダンプ文字列取得
     //-----------------------------------------------------------------------------
-    virtual std::string ToDump(u_char* data, size_t size)
+    virtual std::string ToDump(u_char* data, size_t size, int offset)
     {
         std::stringstream _dumpmsg; // ダンプメッセージ
 
@@ -59,7 +59,7 @@ protected:
             if ((i % DUMP_STRING_WIDHT) == 0)
             {
                 _addrress = (uintptr_t)p;
-                _dumpmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
+                _dumpmsg << std::setw(offset) << std::setfill(' ') << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
                 memset(text, '\0', sizeof(text));
             }
             _data = (unsigned int)*p;

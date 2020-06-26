@@ -218,7 +218,10 @@ public:
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
 
         // タグ設定
-        Diagnostics::DiagnosticsStream << " " << tag << " ";
+        if(tag != NULL)
+        {
+            Diagnostics::DiagnosticsStream << " " << tag << " ";
+        }
 
         // メッセージ生成
         char _buffer[DUMP_MESSAGE_MAX+1];
@@ -247,7 +250,11 @@ public:
         Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
 
         // タグ設定
-        Diagnostics::DiagnosticsStream << " " << tag << " ";
+        Diagnostics::DiagnosticsStream << " ";
+        if(tag != NULL)
+        {
+            Diagnostics::DiagnosticsStream << tag << " ";
+        }
 
         // メッセージ生成
         char _buffer[DUMP_MESSAGE_MAX+1];
@@ -348,6 +355,34 @@ public:
 
         // バッファフラッシュ
         Diagnostics::Flush();
+#endif
+    }
+    //--------------------------------------------------------------------------
+    // Trace - Abort
+    // 　指定されたエラー メッセージを出力します。
+    //--------------------------------------------------------------------------
+    static void Abort(std::string format, ...)
+    {
+#if _DEBUG_
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        Diagnostics::WriteLine("[Trace][Abort]", format.c_str(), ap);
+        va_end(ap);
+#endif
+    }
+    //--------------------------------------------------------------------------
+    // Trace - Panic
+    // 　指定されたエラー メッセージを出力します。
+    //--------------------------------------------------------------------------
+    static void Panic(std::string format, ...)
+    {
+#if _DEBUG_
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+        Diagnostics::WriteLine("[Trace][Panic]", format.c_str(), ap);
+        va_end(ap);
 #endif
     }
     //--------------------------------------------------------------------------

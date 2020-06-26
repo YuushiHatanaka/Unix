@@ -39,15 +39,14 @@ public:
 //------------------------------------------------------------------------------
 // EmptyBlockクラス
 //------------------------------------------------------------------------------
-class EmptyBlock {
+class EmptyBlock : public Object {
 private:
     Mutex m_Mutex;                          // 排他制御
-    uint64_t m_Capacity;                    // 空塞表最大数
-    uint64_t m_BitmapSize;                  // 空塞表マップサイズ
-    uint64_t m_BitmapBlockSize;             // 空塞表マップブロックサイズ
-    uint64_t m_BlockCount;                  // 閉塞数
+    int64_t m_Capacity;                    // 空塞表最大数
+    int64_t m_BitmapSize;                  // 空塞表マップサイズ
+    int64_t m_BitmapBlockSize;             // 空塞表マップブロックサイズ
+    int64_t m_BlockCount;                  // 閉塞数
     u_char* m_Bitmap;                       // 空塞表
-    static const int DUMP_STRING_WIDHT = 16;// ダンプ文字列長
 
 private:
     //--------------------------------------------------------------------------
@@ -65,53 +64,16 @@ private:
     //--------------------------------------------------------------------------
     // ダンプイメージ取得
     //--------------------------------------------------------------------------
-    std::string Dump(int indent)
+    std::string Dump(int offset)
     {
-        std::stringstream _image;           // ダンプイメージ
-
-        // ログ内容
-        const unsigned char* p = (const unsigned char*)this->m_Bitmap;
-        char text[EmptyBlock::DUMP_STRING_WIDHT+1];
-        unsigned i = 0;
-
-        // サイズ分繰り返す
-        while (i < this->m_BitmapBlockSize)
-        {
-            // アドレス部取得
-            if ((i % EmptyBlock::DUMP_STRING_WIDHT) == 0)
-            {
-                _image << std::string(indent, ' ') << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << i << ": ";
-                memset(text, '\0', sizeof(text));
-            }
-
-            // ダンプデータ設定
-            unsigned int d = (unsigned int)(*p);
-            _image << std::hex << std::setw(2) << std::right << std::setfill('0') << d << " ";
-            text[i % EmptyBlock::DUMP_STRING_WIDHT] = isprint(*p) ? *p : '.';
-            p++; i++;
-
-            // テキスト部出力
-            if ((i % EmptyBlock::DUMP_STRING_WIDHT) == 0)
-            {
-                _image << ": " << text << std::endl;
-            }
-        }
-
-        // 残り部分出力
-        if ((i % EmptyBlock::DUMP_STRING_WIDHT) != 0)
-        {
-            _image << std::setw((DUMP_STRING_WIDHT - (i % DUMP_STRING_WIDHT)) * 3 + 2) << std::setfill(' ');
-            _image << ": " << text << std::endl;
-        }
-
-        // ダンプイメージを返却
-        return _image.str();
+        // ダンプイメージ返却
+        return this->ToDump(this->m_Bitmap, this->m_BitmapBlockSize, offset);
     }
 
     //--------------------------------------------------------------------------
     // 位置取得
     //--------------------------------------------------------------------------
-    void GetPosition(uint64_t index, uint64_t& row, uint64_t& col)
+    void GetPosition(int64_t index, int64_t& row, int64_t& col)
     {
         row = index / 8;
         col = index % 8;
@@ -120,10 +82,10 @@ private:
     //--------------------------------------------------------------------------
     // 値取得
     //--------------------------------------------------------------------------
-    u_char GetValue(uint64_t index)
+    u_char GetValue(int64_t index)
     {
-        uint64_t _row = 0;                  // 位置(縦)
-        uint64_t _col = 0;                  // 位置(横)
+        int64_t _row = 0;                  // 位置(縦)
+        int64_t _col = 0;                  // 位置(横)
 
         // 位置取得
         this->GetPosition(index, _row, _col);
@@ -144,10 +106,10 @@ private:
     //--------------------------------------------------------------------------
     // 値設定
     //--------------------------------------------------------------------------
-    void SetValue(uint64_t index)
+    void SetValue(int64_t index)
     {
-        uint64_t _row = 0;                  // 位置(縦)
-        uint64_t _col = 0;                  // 位置(横)
+        int64_t _row = 0;                  // 位置(縦)
+        int64_t _col = 0;                  // 位置(横)
 
         // 位置取得
         this->GetPosition(index, _row, _col);
@@ -159,10 +121,10 @@ private:
     //--------------------------------------------------------------------------
     // 値設定
     //--------------------------------------------------------------------------
-    void FreeValue(uint64_t index)
+    void FreeValue(int64_t index)
     {
-        uint64_t _row = 0;                  // 位置(縦)
-        uint64_t _col = 0;                  // 位置(横)
+        int64_t _row = 0;                  // 位置(縦)
+        int64_t _col = 0;                  // 位置(横)
 
         // 位置取得
         this->GetPosition(index, _row, _col);
@@ -171,11 +133,30 @@ private:
         this->m_Bitmap[_row] &= ~(0x01 << _col);
     }
 
+protected:
+    //--------------------------------------------------------------------------
+    // 排他
+    //--------------------------------------------------------------------------
+    bool Lock()
+    {
+        // 排他
+        return this->m_Mutex.Lock();
+    }
+
+    //--------------------------------------------------------------------------
+    // 排他解除
+    //--------------------------------------------------------------------------
+    bool Unlock()
+    {
+        // 排他解除
+        return this->m_Mutex.Unlock();
+    }
+
 public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    EmptyBlock(uint64_t capacity)
+    EmptyBlock(int64_t capacity) : Object()
     {
         // 排他
         this->m_Mutex.Lock();
@@ -197,7 +178,7 @@ public:
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    EmptyBlock(const EmptyBlock& emptyblock)
+    EmptyBlock(const EmptyBlock& emptyblock) : Object(emptyblock)
     {
         // 排他
         this->m_Mutex.Lock();
@@ -227,9 +208,18 @@ public:
     }
 
     //--------------------------------------------------------------------------
+    // 空塞表最大数取得
+    //--------------------------------------------------------------------------
+    int64_t Capacity()
+    {
+        // 返却
+        return this->m_Capacity;
+    }
+
+    //--------------------------------------------------------------------------
     // 空き判定
     //--------------------------------------------------------------------------
-    bool IsEmpty(uint64_t index)
+    bool IsEmpty(int64_t index)
     {
         // 範囲判定
         if(index > this->m_Capacity - 1)
@@ -254,7 +244,7 @@ public:
     //--------------------------------------------------------------------------
     // 閉塞
     //--------------------------------------------------------------------------
-    char Occlusion(uint64_t index)
+    char Occlusion(int64_t index)
     {
         // 範囲判定
         if(index > this->m_Capacity - 1)
@@ -292,7 +282,7 @@ public:
     //--------------------------------------------------------------------------
     // 解放
     //--------------------------------------------------------------------------
-    char Free(uint64_t index)
+    char Free(int64_t index)
     {
         // 範囲判定
         if(index > this->m_Capacity - 1)
@@ -325,6 +315,37 @@ public:
 
         // 正常終了
         return 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // 検索
+    //--------------------------------------------------------------------------
+    int64_t Find(int64_t start)
+    {
+        // 検索(検索位置から)
+        for(int64_t i=start; i<this->m_Capacity; i++)
+        {
+            // 空塞判定
+            if(this->IsEmpty(i))
+            {
+                // 空きあり
+                return i;
+            }
+        }
+
+        // 検索(先頭から)
+        for(int64_t i=0; i<start; i++)
+        {
+            // 空塞判定
+            if(this->IsEmpty(i))
+            {
+                // 空きあり
+                return i;
+            }
+        }
+
+        // 空きなし
+        return -1;
     }
 
     //--------------------------------------------------------------------------

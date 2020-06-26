@@ -354,7 +354,7 @@ public :
     std::ostream& append(const std::stringstream& value)
     {
         // 追加
-        this->m_Data << value;
+        this->m_Data << value.str();
 
         // std::stringstreamを返却
         return this->m_Data;
@@ -445,13 +445,14 @@ public :
     }
 
     //--------------------------------------------------------------------------
-    // 数値化(int)
+    // 数値化
     //--------------------------------------------------------------------------
-    int ToInt()
+    template<typename T>
+    T ToInt()
     {
         // 数値化用オブジェクト生成
         std::istringstream _istringstream(this->m_Data.str());
-        int _ToIntValue;
+        T _ToIntValue;
         _istringstream >> _ToIntValue;
 
         // 値を返却

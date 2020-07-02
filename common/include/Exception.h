@@ -43,7 +43,7 @@ protected :
         char _buffer[EXCEPTION_MESSAGE_MAX+1];
         memset( _buffer, 0x00, sizeof(_buffer) );
         vsnprintf(_buffer, sizeof(_buffer), format.c_str(), arg);
-        _message << _buffer << "\n";
+        _message << _buffer;
 
         // メッセージ設定
         this->Msg = _message.str();

@@ -8,6 +8,7 @@
 // インクルードファイル
 //==============================================================================
 #include "Exception.h"
+#include "Object.h"
 #include "RegularExpression.h"
 #include <iostream>
 #include <sstream>
@@ -48,7 +49,7 @@ public:
 //-----------------------------------------------------------------------------
 // IniReaderクラス
 //-----------------------------------------------------------------------------
-class IniReader
+class IniReader : public Object
 {
 private :
     std::string m_filename;                 // ファイル名
@@ -124,7 +125,7 @@ public :
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    IniReader(std::string filename)
+    IniReader(std::string filename) : Object()
     {
         // 初期化
         this->m_filename = filename;
@@ -134,7 +135,7 @@ public :
     //--------------------------------------------------------------------------
     // コンストラクタ
     //--------------------------------------------------------------------------
-    IniReader(const IniReader& reader)
+    IniReader(const IniReader& reader) : Object(reader)
     {
         // コピー
         this->m_filename = reader.m_filename;

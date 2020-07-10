@@ -106,6 +106,7 @@ public:
         this->m_pathaddr.sun_family = AF_UNIX;
         strcpy(this->m_pathaddr.sun_path, path.c_str());
         this->m_path = path;
+        this->m_pathaddr_length = sizeof(this->m_pathaddr);
     }
 
     //--------------------------------------------------------------------------
@@ -122,7 +123,16 @@ public:
     bool Bind()
     {
         // 名前付与
-        if(bind(this->m_socket, (struct sockaddr*)&(this->m_pathaddr), sizeof(this->m_pathaddr)) != 0)
+        return this->Bind(this->m_socket);
+    }
+
+    //--------------------------------------------------------------------------
+    // 名前付与
+    //--------------------------------------------------------------------------
+    bool Bind(int socket)
+    {
+        // 名前付与
+        if(bind(socket, (struct sockaddr*)&(this->m_pathaddr), sizeof(this->m_pathaddr)) != 0)
         {
             // エラー番号設定
             this->SetErrno();
@@ -141,7 +151,16 @@ public:
     int Accept()
     {
         // 接続要求受付
-        int _socket = accept(this->m_socket, (struct sockaddr*)&(this->m_pathaddr), &(this->m_pathaddr_length));
+        return this->Accept(this->m_socket);
+    }
+
+    //--------------------------------------------------------------------------
+    // 接続要求受付
+    //--------------------------------------------------------------------------
+    int Accept(int socket)
+    {
+        // 接続要求受付
+        int _socket = accept(socket, (struct sockaddr*)&(this->m_pathaddr), &(this->m_pathaddr_length));
 
         // 結果判定
         if(_socket < 0)

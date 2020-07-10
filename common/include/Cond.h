@@ -74,10 +74,11 @@ public:
     bool Signal()
     {
         // signal
-        if(pthread_cond_signal(&(this->m_cond)) != 0)
+        int _result = pthread_cond_signal(&(this->m_cond));
+        if(_result != 0)
         {
             // エラー番号設定
-            this->SetErrno();
+            this->SetErrno(_result);
 
             // 異常終了
             return false;
@@ -93,10 +94,11 @@ public:
     bool Broadcast()
     {
         // broadcast設定
-        if(pthread_cond_broadcast(&(this->m_cond)) != 0)
+        int _result = pthread_cond_broadcast(&(this->m_cond));
+        if(_result != 0)
         {
             // エラー番号設定
-            this->SetErrno();
+            this->SetErrno(_result);
 
             // 異常終了
             return false;
@@ -112,10 +114,11 @@ public:
     bool Wait()
     {
         // wait設定
-        if(pthread_cond_wait(&(this->m_cond), &(this->m_mutex)) != 0)
+        int _result = pthread_cond_wait(&(this->m_cond), &(this->m_mutex));
+        if(_result != 0)
         {
             // エラー番号設定
-            this->SetErrno();
+            this->SetErrno(_result);
 
             // 異常終了
             return false;
@@ -133,7 +136,7 @@ public:
         struct timespec _msec;
 
         // ミリ秒変換
-        _msec.tv_sec = msec / 1000;
+        _msec.tv_sec = time(NULL) + (msec / 1000);
         _msec.tv_nsec = (msec % 1000) * 1000;
 
         // 正常終了
@@ -146,10 +149,11 @@ public:
     bool Timedwait(const struct timespec* abstime)
     {
         // wait設定
-        if(pthread_cond_timedwait(&(this->m_cond), &(this->m_mutex), abstime) != 0)
+        int _result = pthread_cond_timedwait(&(this->m_cond), &(this->m_mutex), abstime);
+        if(_result != 0)
         {
             // エラー番号設定
-            this->SetErrno();
+            this->SetErrno(_result);
 
             // 異常終了
             return false;

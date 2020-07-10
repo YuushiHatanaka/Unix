@@ -191,7 +191,16 @@ public :
     bool Bind()
     {
         // 名前付与
-        if(bind(this->m_socket, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr)) != 0)
+        return this->Bind(this->m_socket);
+    }
+
+    //--------------------------------------------------------------------------
+    // 名前付与
+    //--------------------------------------------------------------------------
+    bool Bind(int socket)
+    {
+        // 名前付与
+        if(bind(socket, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr)) != 0)
         {
             // エラー番号設定
             this->SetErrno();
@@ -210,7 +219,16 @@ public :
     bool Listen(int backlog)
     {
         // 接続要求待ち
-        if(listen(this->m_socket, backlog) != 0)
+        return this->Listen(this->m_socket, backlog);
+    }
+
+    //--------------------------------------------------------------------------
+    // 接続要求待ち
+    //--------------------------------------------------------------------------
+    bool Listen(int socket, int backlog)
+    {
+        // 接続要求待ち
+        if(listen(socket, backlog) != 0)
         {
             // エラー番号設定
             this->SetErrno();
@@ -227,6 +245,15 @@ public :
     // 接続要求受付
     //--------------------------------------------------------------------------
     int Accept()
+    {
+        // 接続要求受付
+        return this->Accept(this->m_socket);
+    }
+
+    //--------------------------------------------------------------------------
+    // 接続要求受付
+    //--------------------------------------------------------------------------
+    int Accept(int socket)
     {
         // 接続要求受付
         int _socket = accept(this->m_socket, (struct sockaddr *)&(this->m_sockaddr), &(this->m_sockaddr_length));
@@ -325,7 +352,7 @@ public :
     //--------------------------------------------------------------------------
     // 読込
     //--------------------------------------------------------------------------
-    size_t Read(char* buffer, size_t size)
+    ssize_t Read(char* buffer, ssize_t size)
     {
         // 読込サイズを返却
         return this->Read(this->m_socket, buffer, size);
@@ -334,9 +361,9 @@ public :
     //--------------------------------------------------------------------------
     // 読込
     //--------------------------------------------------------------------------
-    size_t Read(int socket, char* buffer, size_t size)
+    ssize_t Read(int socket, char* buffer, ssize_t size)
     {
-        size_t _readSize = 0;               // 読込サイズ
+        ssize_t _readSize = 0;              // 読込サイズ
 
         // 読込
         _readSize = read(socket, buffer, size);
@@ -355,7 +382,7 @@ public :
     //--------------------------------------------------------------------------
     // 書込
     //--------------------------------------------------------------------------
-    size_t Write(char* buffer, size_t size)
+    ssize_t Write(char* buffer, ssize_t size)
     {
         // 書込サイズを返却
         return  this->Write(this->m_socket, buffer, size);
@@ -364,9 +391,9 @@ public :
     //--------------------------------------------------------------------------
     // 書込
     //--------------------------------------------------------------------------
-    size_t Write(int socket, char* buffer, size_t size)
+    ssize_t Write(int socket, char* buffer, ssize_t size)
     {
-        size_t _writeSize = 0;                  // 書込サイズ
+        ssize_t _writeSize = 0;             // 書込サイズ
 
         // 書込
         _writeSize = write(socket, buffer, size);
@@ -385,7 +412,7 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t Send(const void* buffer, size_t size, int flags)
+    ssize_t Send(const void* buffer, ssize_t size, int flags)
     {
         // 送信
         return this->Send(this->m_socket, buffer, size, flags);
@@ -394,9 +421,9 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t Send(int socket, const void* buffer, size_t size, int flags)
+    ssize_t Send(int socket, const void* buffer, ssize_t size, int flags)
     {
-        size_t _sendSize = 0;                   // 送信サイズ
+        ssize_t _sendSize = 0;              // 送信サイズ
 
         // 送信
         _sendSize = send(socket, buffer, size, flags);
@@ -415,7 +442,7 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t SendTo(const void* buffer, size_t size, int flags)
+    ssize_t SendTo(const void* buffer, ssize_t size, int flags)
     {
         // 送信サイズを返却
         return this->SendTo(this->m_socket, buffer, size, flags);
@@ -424,9 +451,9 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t SendTo(int socket, const void* buffer, size_t size, int flags)
+    ssize_t SendTo(int socket, const void* buffer, ssize_t size, int flags)
     {
-        size_t _sendSize = 0;                   // 送信サイズ
+        ssize_t _sendSize = 0;              // 送信サイズ
 
         // 送信
         _sendSize = sendto(socket, buffer, size, flags, (struct sockaddr*)&(this->m_sockaddr), sizeof(this->m_sockaddr));
@@ -445,7 +472,7 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t SendMsg(const struct msghdr* message, int flags)
+    ssize_t SendMsg(const struct msghdr* message, int flags)
     {
         // 送信サイズを返却
         return this->SendMsg(this->m_socket, message, flags);
@@ -454,9 +481,9 @@ public :
     //--------------------------------------------------------------------------
     // 送信
     //--------------------------------------------------------------------------
-    size_t SendMsg(int socket, const struct msghdr* message, int flags)
+    ssize_t SendMsg(int socket, const struct msghdr* message, int flags)
     {
-        size_t _sendSize = 0;                   // 送信サイズ
+        ssize_t _sendSize = 0;              // 送信サイズ
 
         // 送信
         _sendSize = sendmsg(socket, message, flags);
@@ -475,7 +502,7 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t Recv(void* buffer, size_t size, int flags)
+    ssize_t Recv(void* buffer, ssize_t size, int flags)
     {
          // 受信サイズを返却
         return this->Recv(this->m_socket, buffer, size, flags);
@@ -484,9 +511,9 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t Recv(int socket, void* buffer, size_t size, int flags)
+    ssize_t Recv(int socket, void* buffer, ssize_t size, int flags)
     {
-        size_t _recvSize = 0;                   // 受信サイズ
+        ssize_t _recvSize = 0;              // 受信サイズ
 
         // 受信
         _recvSize = recv(socket, buffer, size, flags);
@@ -505,7 +532,7 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t RecvFrom(void* buffer, size_t size, int flags, Socket& recvSocket)
+    ssize_t RecvFrom(void* buffer, ssize_t size, int flags, Socket& recvSocket)
     {
         // 受信サイズを返却
         return this->RecvFrom(this->m_socket, buffer, size, flags, recvSocket);
@@ -514,9 +541,9 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t RecvFrom(int socket, void* buffer, size_t size, int flags, Socket& recvSocket)
+    ssize_t RecvFrom(int socket, void* buffer, ssize_t size, int flags, Socket& recvSocket)
     {
-        size_t _recvSize = 0;                   // 受信サイズ
+        ssize_t _recvSize = 0;              // 受信サイズ
 
         // 受信
         _recvSize = recvfrom(socket, buffer, size, flags, (struct sockaddr*)&(recvSocket.m_sockaddr), &(recvSocket.m_sockaddr_length));
@@ -535,7 +562,7 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t RecvMsg(struct msghdr* message, int flags)
+    ssize_t RecvMsg(struct msghdr* message, int flags)
     {
         // 受信サイズを返却
         return this->RecvMsg(this->m_socket, message, flags);;
@@ -544,9 +571,9 @@ public :
     //--------------------------------------------------------------------------
     // 受信
     //--------------------------------------------------------------------------
-    size_t RecvMsg(int socket, struct msghdr* message, int flags)
+    ssize_t RecvMsg(int socket, struct msghdr* message, int flags)
     {
-        size_t _recvSize = 0;                   // 受信サイズ
+        ssize_t _recvSize = 0;              // 受信サイズ
 
         // 受信
         _recvSize = recvmsg(this->m_socket, message, flags);

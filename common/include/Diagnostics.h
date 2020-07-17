@@ -8,6 +8,7 @@
 // インクルードファイル
 //==============================================================================
 #include "Exception.h"
+#include "DateTime.h"
 #include <sys/time.h>
 #include <fstream>
 #include <iomanip>
@@ -177,35 +178,6 @@ public:
     }
 
 #if _DEBUG_
-    //-------------------------------------------------------------------------
-    // 現在日時文字列取得
-    //-------------------------------------------------------------------------
-    static std::string get_datetime_string()
-    {
-        std::string _now_datetime = ""; // 現在日時文字列
-        struct timeval _timeval;        // 現在日時
-        struct tm _tm;                  // 現在日時
-        char _now_datetime_str[32+1];   // 現在日時文字列
-
-        // 初期化
-        memset(_now_datetime_str, 0x00, sizeof(_now_datetime_str));
-        memset(&_timeval, 0x00, sizeof(_timeval));
-
-        // 現在日時取得
-        gettimeofday( &_timeval, NULL );
-        localtime_r( &_timeval.tv_sec , &_tm);
-
-        // 現在日時を文字列に変換
-        strftime( _now_datetime_str, sizeof(_now_datetime_str), "%Y/%m/%d %H:%M:%S", &_tm );
-        _now_datetime += std::string(_now_datetime_str);
-        memset(_now_datetime_str, 0x00, sizeof(_now_datetime_str));
-        snprintf( _now_datetime_str, sizeof(_now_datetime_str), ".%03d", (int)(_timeval.tv_usec/1000) );
-        _now_datetime += std::string(_now_datetime_str);
-
-        // 現在日時文字列を返却
-        return _now_datetime;
-    }
-
     //--------------------------------------------------------------------------
     // メッセージ出力
     //--------------------------------------------------------------------------
@@ -215,7 +187,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L");
 
         // タグ設定
         if(tag != NULL)
@@ -247,7 +219,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string();
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L");
 
         // タグ設定
         Diagnostics::DiagnosticsStream << " ";
@@ -296,7 +268,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert]" << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert]" << "\n";
 
         // 排他解除
         Diagnostics::Unlock();
@@ -322,7 +294,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert] " << message << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert] " << message << "\n";
 
         // 排他解除
         Diagnostics::Unlock();
@@ -348,7 +320,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Assert] " << message << "\n" << detailMessage << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert] " << message << "\n" << detailMessage << "\n";
 
         // 排他解除
         Diagnostics::Unlock();
@@ -556,7 +528,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Trace][Dump] " << _logmsg.str();
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Dump] " << _logmsg.str();
 
         // 排他解除
         Diagnostics::Unlock();
@@ -587,7 +559,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert]" << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert]" << "\n";
 
         // 排他解除
         Diagnostics::Unlock();
@@ -613,7 +585,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert] " << message << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert] " << message << "\n";
 
         // 排他解除
         Diagnostics::Unlock();
@@ -639,7 +611,7 @@ public:
         Diagnostics::Lock();
 
         // 現在日時文字列取得
-        Diagnostics::DiagnosticsStream << Diagnostics::get_datetime_string() << " [Debug][Assert] " << message << "\n" << detailMessage << "\n";
+        Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert] " << message << "\n" << detailMessage << "\n";
 
         // 排他解除
         Diagnostics::Unlock();

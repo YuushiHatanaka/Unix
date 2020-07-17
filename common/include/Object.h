@@ -30,6 +30,7 @@ class Object
 {
 protected:
     int m_errno;                            // エラー番号
+    std::stringstream m_ErrorMsg;           // 文字列化オブジェクト
 
 protected:
     //-----------------------------------------------------------------------------
@@ -163,6 +164,7 @@ public:
     //--------------------------------------------------------------------------
     void SetErrno()
     {
+        // エラー番号設定
         this->SetErrno(errno);
     }
 
@@ -171,25 +173,44 @@ public:
     //--------------------------------------------------------------------------
     void SetErrno(int no)
     {
-        this->m_errno = no;
-    }
-
-    //--------------------------------------------------------------------------
-    // エラーメッセージ文字列化
-    //--------------------------------------------------------------------------
-    virtual std::string ToErrMsg()
-    {
-        std::stringstream _toErrMsg;        // 文字列化オブジェクト
         char _buf[4096+1];                  // 文字列化バッファ
+
+        // エラー番号設定
+        this->m_errno = no;
 
         // 初期化
         memset(_buf, 0x00, sizeof(_buf));
 
         // 文字列化
-        _toErrMsg << strerror_r(this->m_errno, _buf, sizeof(_buf));
+        this->m_ErrorMsg << strerror_r(this->m_errno, _buf, sizeof(_buf));
+    }
 
+    //--------------------------------------------------------------------------
+    // エラーメッセージ設定
+    //--------------------------------------------------------------------------
+    void SetErrorMsg(const char* format, ...)
+    {
+        // メッセージ生成
+        va_list ap;
+        va_start(ap, format);
+
+        // メッセージ生成
+        char _buffer[4096+1];
+        memset( _buffer, 0x00, sizeof(_buffer) );
+        vsnprintf(_buffer, sizeof(_buffer), format, ap);
+        va_end(ap);
+
+        // 文字列化
+        this->m_ErrorMsg << _buffer;
+    }
+
+    //--------------------------------------------------------------------------
+    // エラーメッセージ文字列取得
+    //--------------------------------------------------------------------------
+    std::string GetErrorMsg()
+    {
         // 文字列を返却
-        return _toErrMsg.str();
+        return this->m_ErrorMsg.str();
     }
 
     //--------------------------------------------------------------------------

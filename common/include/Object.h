@@ -60,7 +60,11 @@ protected:
             if ((i % DUMP_STRING_WIDHT) == 0)
             {
                 _addrress = (uintptr_t)p;
-                _dumpmsg << std::setw(offset) << std::setfill(' ') << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
+                for(int i=0; i<offset; i++)
+                {
+                    _dumpmsg << " ";
+                }
+                _dumpmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') <<  _addrress << ": ";
                 memset(text, '\0', sizeof(text));
             }
             _data = (unsigned int)*p;

@@ -551,14 +551,14 @@ public :
     std::string DeleteCrlf()
     {
         // 改行を削除
-        const char CR = '\r';
-        const char LF = '\n';
+        const std::string CR = "\r";
+        const std::string LF = "\n";
         std::stringstream destStr;
-        for(std::string::const_iterator it=this->m_Data.str().begin(); it!=this->m_Data.str().end(); ++it)
+        for(size_t pos = 0; pos < this->m_Data.str().length(); pos++)
         {
-            if( *it != CR && *it != LF )
+            if(this->m_Data.str().substr(pos,1) != CR && this->m_Data.str().substr(pos,1) != LF)
             {
-                destStr << *it;
+                destStr << this->m_Data.str().substr(pos,1);
             }
         }
 

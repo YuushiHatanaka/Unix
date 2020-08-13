@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <stdint.h>
 #include <iomanip>

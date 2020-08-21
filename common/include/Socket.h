@@ -699,6 +699,40 @@ public :
     }
 
     //--------------------------------------------------------------------------
+    // イベント待ち(select)
+    //--------------------------------------------------------------------------
+    bool Select()
+    {
+        fd_set _readfds;                        // fd_set
+        int _maxfd;                             // ファイルディスクリプタ最大値
+
+        // fd_set初期化
+        FD_ZERO(&_readfds);
+
+        // selectで待つ読み込みソケットを登録
+        FD_SET(this->m_socket, &_readfds);
+
+        // ファイルディスクリプタの最大値設定
+        _maxfd = this->m_socket;
+
+        // イベント待ち(select)
+        int _result = select(_maxfd+1, &_readfds, NULL, NULL, NULL);
+
+        // イベント待ち判定
+        if(_result < 0)
+        {
+            // エラー番号設定
+            this->SetErrno();
+
+            // 異常終了
+            return false;
+        }
+
+        // 正常終了
+        return true;
+    }
+
+    //--------------------------------------------------------------------------
     // イベント待ち(poll)
     //--------------------------------------------------------------------------
     bool Poll(short events, short& revent, int timeout)

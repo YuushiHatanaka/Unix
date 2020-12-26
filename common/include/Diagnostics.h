@@ -257,7 +257,7 @@ public:
     //--------------------------------------------------------------------------
     static void Assert(bool condition)
     {
-#if _DEBUG_
+#if _TRACE_
         // 条件判定
         if(condition)
         {
@@ -283,7 +283,7 @@ public:
     //--------------------------------------------------------------------------
     static void Assert(bool condition, std::string message)
     {
-#if _DEBUG_
+#if _TRACE_
         // 条件判定
         if(condition)
         {
@@ -309,7 +309,7 @@ public:
     //--------------------------------------------------------------------------
     static void Assert(bool condition, std::string message, std::string detailMessage)
     {
-#if _DEBUG_
+#if _TRACE_
         // 条件判定
         if(condition)
         {
@@ -335,7 +335,7 @@ public:
     //--------------------------------------------------------------------------
     static void Abort(std::string format, ...)
     {
-#if _DEBUG_
+#if _TRACE_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
@@ -349,7 +349,7 @@ public:
     //--------------------------------------------------------------------------
     static void Panic(std::string format, ...)
     {
-#if _DEBUG_
+#if _TRACE_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
@@ -363,7 +363,7 @@ public:
     //--------------------------------------------------------------------------
     static void Fail(std::string format, ...)
     {
-#if _DEBUG_
+#if _TRACE_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
@@ -377,7 +377,7 @@ public:
     //--------------------------------------------------------------------------
     static void Error(std::string format, ...)
     {
-#if _DEBUG_
+#if _TRACE_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
@@ -391,12 +391,14 @@ public:
     //--------------------------------------------------------------------------
     static void Information(std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
         Diagnostics::WriteLine("[Trace][Information]", format.c_str(), ap);
         va_end(ap);
+#endif
 #endif
     }
     //--------------------------------------------------------------------------
@@ -405,12 +407,14 @@ public:
     //--------------------------------------------------------------------------
     static void Warning(std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
         Diagnostics::WriteLine("[Trace][Warning]", format.c_str(), ap);
         va_end(ap);
+#endif
 #endif
     }
     //--------------------------------------------------------------------------
@@ -419,12 +423,14 @@ public:
     //--------------------------------------------------------------------------
     static void Write(std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
         Diagnostics::Write("[Trace]", format.c_str(), ap);
         va_end(ap);
+#endif
 #endif
     }
     //--------------------------------------------------------------------------
@@ -433,6 +439,7 @@ public:
     //--------------------------------------------------------------------------
     static void WriteIf(bool condition, std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // 条件判定
         if(!condition)
@@ -446,6 +453,7 @@ public:
         Diagnostics::Write("[Trace]", format.c_str(), ap);
         va_end(ap);
 #endif
+#endif
     }
     //--------------------------------------------------------------------------
     // Trace - WriteLine
@@ -453,12 +461,14 @@ public:
     //--------------------------------------------------------------------------
     static void WriteLine(std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // メッセージ生成
         va_list ap;
         va_start(ap, format);
         Diagnostics::WriteLine("[Trace]", format.c_str(), ap);
         va_end(ap);
+#endif
 #endif
     }
     //--------------------------------------------------------------------------
@@ -467,6 +477,7 @@ public:
     //--------------------------------------------------------------------------
     static void WriteLineIf(bool condition, std::string format, ...)
     {
+#if _TRACE_
 #if _DEBUG_
         // 条件判定
         if(!condition)
@@ -480,6 +491,7 @@ public:
         Diagnostics::WriteLine("[Trace]", format.c_str(), ap);
         va_end(ap);
 #endif
+#endif
     }
 
     //-------------------------------------------------------------------------
@@ -487,6 +499,7 @@ public:
     //-------------------------------------------------------------------------
     static void Dump(const char* message, const void *addr, size_t bytes)
     {
+#if _TRACE_
 #if _DEBUG_
         std::stringstream _logmsg;    // ログメッセージ
         // ログヘッダ
@@ -532,6 +545,7 @@ public:
 
         // 排他解除
         Diagnostics::Unlock();
+#endif
 #endif
     }
 };

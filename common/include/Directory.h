@@ -11,6 +11,12 @@
 #include "Exception.h"
 
 //==============================================================================
+// マクロ定義
+//==============================================================================
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
+//==============================================================================
 // クラス定義
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -66,6 +72,70 @@ public:
 
         // カレントディレクトリ取得
         getcwd(pathname, sizeof(pathname)-1);
+
+        // 文字列化
+        std::stringstream _path;
+        _path << pathname;
+
+        // 文字列返却
+        return _path.str();
+    }
+
+    //-------------------------------------------------------------------------
+    // 実行ファイル名取得
+    //-------------------------------------------------------------------------
+    std::string GetModuleFileName()
+    {
+        // 変数定義
+        char szTmp[32];                     // procパス
+        char pathname[4096+1];              // ファイルパス
+        ssize_t len;                        // バッファサイズ
+
+        // 自身のプロセスIDから実行ディレクトリを取得する
+        sprintf(szTmp, "/proc/%d/exe", getpid());
+        len = sizeof(pathname);
+        int bytes = MIN(readlink(szTmp, pathname, len), len-1);
+        if(bytes >= 0)
+        {
+            pathname[bytes] = '\0';
+        }
+
+        // 文字列化
+        std::stringstream _path;
+        _path << pathname;
+
+        // 文字列返却
+        return _path.str();
+    }
+
+    //-------------------------------------------------------------------------
+    // 実行ディレクトリ取得
+    //-------------------------------------------------------------------------
+    std::string GetExecutionDirectory()
+    {
+        // 変数定義
+        char szTmp[32];                     // procパス
+        char pathname[4096+1];              // ファイルパス
+        ssize_t len;                        // バッファサイズ
+
+        // 自身のプロセスIDから実行ディレクトリを取得する
+        sprintf(szTmp, "/proc/%d/exe", getpid());
+        len = sizeof(pathname);
+        int bytes = MIN(readlink(szTmp, pathname, len), len-1);
+        if(bytes >= 0)
+        {
+            pathname[bytes] = '\0';
+        }
+
+        // '/'を逆から探す
+        for(int i=bytes-1; i>=0; i--)
+        {
+            if(pathname[i] == '/')
+            {
+                pathname[i] = '\0';
+                break;
+            }
+        }
 
         // 文字列化
         std::stringstream _path;

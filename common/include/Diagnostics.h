@@ -203,11 +203,11 @@ public:
         // バッファ書込み
         Diagnostics::DiagnosticsStream << _buffer;
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
     }
 
     //--------------------------------------------------------------------------
@@ -236,11 +236,11 @@ public:
         // バッファ書込み
         Diagnostics::DiagnosticsStream << _buffer << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
     }
 #endif
 };
@@ -270,11 +270,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert]" << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -296,11 +296,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert] " << message << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -322,11 +322,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Trace][Assert] " << message << "\n" << detailMessage << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -502,37 +502,100 @@ public:
 #if _TRACE_
 #if _DEBUG_
         std::stringstream _logmsg;    // ログメッセージ
-        // ログヘッダ
-        _logmsg << message << " - size:" << std::dec << bytes << " -" << "\n";
 
         // ログ内容
         const unsigned char* p = (const unsigned char*)addr;
         char text[DUMP_STRING_WIDHT+1];
         unsigned i = 0;
-        unsigned _addrress;
-        unsigned int _data;
+        unsigned _top_addrress = (uintptr_t)p;
+        unsigned _current_addrress;
+        unsigned int _current_data[DUMP_STRING_WIDHT+1];
+        unsigned int _old_data[DUMP_STRING_WIDHT+1];
+        bool _display_flag = false;
+
+        // 初期化
+        memset(text, 0x00, sizeof(text));
+        memset(_current_data, 0x00, sizeof(_current_data));
+        memset(_old_data, 0x00, sizeof(_old_data));
+
+        // ログヘッダ
+        _logmsg << message;
+        _logmsg << " 《adderss:0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _top_addrress << " - ";
+        _logmsg << "size:" << std::dec << bytes << "》" << "\n";
+        _logmsg << "Address    : +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F : ASCII\n";
+
         while (i < bytes)
         {
-            // アドレス出力
+            // アドレス設定
             if ((i % DUMP_STRING_WIDHT) == 0)
             {
-                _addrress = (uintptr_t)p;
-                _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _addrress << ": ";
-                memset(text, '\0', sizeof(text));
+                _current_addrress = i;
             }
-            _data = (unsigned int)*p;
-            _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _data << " ";
+
+            // データ設定
+            _current_data[i % DUMP_STRING_WIDHT] = (unsigned int)*p;
             text[i % DUMP_STRING_WIDHT] = isprint(*p) ? *p : '.';
             p++;
             i++;
-            // テキスト部分出力
+
+            // 出力
             if ((i % DUMP_STRING_WIDHT) == 0)
             {
-                _logmsg << ": " << text << "\n";
+                // 先頭は無条件出力
+                if(i==DUMP_STRING_WIDHT)
+                {
+                    _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _current_addrress << " : ";
+                    for(unsigned j=0; j<DUMP_STRING_WIDHT; j++)
+                    {
+                        _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _current_data[j] << " ";
+                    }
+                    _logmsg << ": " << text << "\n";
+                }
+                else
+                {
+                    // 新旧データを比較
+                    if(memcmp(_current_data, _old_data, sizeof(_current_data)) != 0)
+                    {
+                        // 違いがある場合
+                        _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _current_addrress << " : ";
+                        for(unsigned j=0; j<DUMP_STRING_WIDHT; j++)
+                        {
+                            _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _current_data[j] << " ";
+                        }
+                        _logmsg << ": " << text << "\n";
+                        _display_flag = false;
+                    }
+                    else
+                    {
+                        // 違いがない場合
+                        if(!_display_flag)
+                        {
+                            _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _current_addrress << "*: ";
+                            for(unsigned j=0; j<DUMP_STRING_WIDHT; j++)
+                            {
+                                _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _current_data[j] << " ";
+                            }
+                            _logmsg << ": " << text << "\n";
+                            _display_flag = true;
+                        }
+                    }
+                }
+
+                // バッファクリア
+                memset(text, '\0', sizeof(text));
+                memcpy(_old_data, _current_data, sizeof(_old_data));
+                memset(_current_data, 0x00, sizeof(_current_data));
             }
         }
+
+        // 出力(残り)
         if ((i % DUMP_STRING_WIDHT) != 0)
         {
+            _logmsg << "0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << _current_addrress << " : ";
+            for(unsigned j=0; j<(i % DUMP_STRING_WIDHT); j++)
+            {
+                _logmsg << std::hex << std::setw(2) << std::right << std::setfill('0') << _current_data[j] << " ";
+            }
             _logmsg << std::setw((DUMP_STRING_WIDHT - (i % DUMP_STRING_WIDHT)) * 3 + 2) << std::setfill(' ');
             _logmsg << ": " << text << "\n";
         }
@@ -575,11 +638,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert]" << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -601,11 +664,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert] " << message << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------
@@ -627,11 +690,11 @@ public:
         // 現在日時文字列取得
         Diagnostics::DiagnosticsStream << DateTime().Now().ToString("%Y/%m/%d %H:%M:%S.%L") << " [Debug][Assert] " << message << "\n" << detailMessage << "\n";
 
-        // 排他解除
-        Diagnostics::Unlock();
-
         // バッファフラッシュ
         Diagnostics::Flush();
+
+        // 排他解除
+        Diagnostics::Unlock();
 #endif
     }
     //--------------------------------------------------------------------------

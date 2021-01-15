@@ -512,5 +512,46 @@ public:
         // 正常終了
         return true;
     }
+
+    //--------------------------------------------------------------------------
+    // Wait
+    //--------------------------------------------------------------------------
+    int Wait(time_t seconds)
+    {
+        // 結果を返却
+        return this->Wait(seconds, 0, 0, 0);
+    }
+
+    //--------------------------------------------------------------------------
+    // Wait
+    //--------------------------------------------------------------------------
+    int Wait(time_t seconds, long millisecond)
+    {
+        // 結果を返却
+        return this->Wait(seconds, millisecond, 0, 0);
+    }
+
+    //--------------------------------------------------------------------------
+    // Wait
+    //--------------------------------------------------------------------------
+    int Wait(time_t seconds, long millisecond, long microseconds)
+    {
+        // 結果を返却
+        return this->Wait(seconds, millisecond, microseconds, 0);
+    }
+
+    //--------------------------------------------------------------------------
+    // Wait
+    //--------------------------------------------------------------------------
+    int Wait(time_t seconds, long millisecond, long microseconds, long nanoseconds)
+    {
+        // timespec構造体設定
+        struct timespec req;
+        req.tv_sec = seconds;
+        req.tv_nsec = (millisecond * 1000000) + ( microseconds * 1000) + nanoseconds;
+
+        // 結果を返却
+        return nanosleep(&req, NULL);
+    }
 };
 #endif                                      // 二重インクルード防止
